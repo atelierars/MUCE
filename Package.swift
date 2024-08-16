@@ -3,40 +3,40 @@
 // Reference: https://opensoundcontrol.stanford.edu/spec-1_0.html
 import PackageDescription
 let package = Package(
-    name: "MUCE",
-    platforms: [
+	name: "MUCE",
+	platforms: [
 		.iOS(.v17),
 		.tvOS(.v17),
 		.macOS(.v14),
 		.macCatalyst(.v17)
-    ],
-    products: [
-        .library(
-            name: "OSC",
-            targets: ["OSC"]
-        ),
+	],
+	products: [
+		.library(
+			name: "OSC",
+			targets: ["OSC"]
+		),
 		.library(
 			name: "Chrono",
 			targets: ["Chrono"]
 		)
-    ],
-    dependencies: [
+	],
+	dependencies: [
 		.package(url: "https://github.com/atelierars/MUSE", branch: "develop")
-    ],
-    targets: [
+	],
+	targets: [
 		.executableTarget(
 			name: "OSC-Snippets",
 			dependencies: [.target(name: "OSC")],
 			path: "OSC/Snippets"
 		),
-        .target(
-            name: "OSC",
-            dependencies: [
+		.target(
+			name: "OSC",
+			dependencies: [
 //                .target(name: "Nearby"),
 				.target(name: "Socket"),
-            ],
-            path: "OSC/Sources"
-        ),
+			],
+			path: "OSC/Sources"
+		),
 		.target(
 			name: "Chrono",
 			dependencies: [
@@ -65,16 +65,16 @@ let package = Package(
 			name: "Async+",
 			path: "Async+/Sources"
 		),
-        .testTarget(
-            name: "OSCTests",
-            dependencies: [
-                .target(name: "OSC")
-            ],
-            path: "OSC/Tests",
+		.testTarget(
+			name: "OSCTests",
+			dependencies: [
+				.target(name: "OSC")
+			],
+			path: "OSC/Tests",
 			swiftSettings: [
 				.unsafeFlags(["-enable-bare-slash-regex"])
 			]
-        ),
+		),
 		.testTarget(
 			name: "ChronoTests",
 			dependencies: [.target(name: "Chrono")],
@@ -90,5 +90,5 @@ let package = Package(
 			dependencies: [.target(name: "Async+")],
 			path: "Async+/Tests"
 		),
-    ]
+	]
 )
