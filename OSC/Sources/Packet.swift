@@ -10,6 +10,17 @@ public enum Packet {
 	case Message(address: String, arguments: Array<Argument>)
 	case Bundle(at: TimeTag, packets: Array<Packet>)
 }
+extension Packet {
+	public init(address: String, arguments: Array<Argument> = .init()) {
+		self = .Message(address: address, arguments: arguments)
+	}
+	public init(at time: TimeTag = .immediately, messages: Array<(String, Array<Argument>)>) {
+		self = .Bundle(at: time, packets: messages.map { Packet.Message(address: $0, arguments: $1) })
+	}
+	public init(at time: TimeTag = .immediately, packets: Array<Self>) {
+		self = .Bundle(at: time, packets: packets)
+	}
+}
 extension Packet: Equatable {
 	
 }
@@ -24,20 +35,38 @@ extension Packet: CustomStringConvertible {
 		}
 	}
 }
-extension Packet {
-	func parse(message execute: (String, Array<Argument>) -> Void) {
-		switch self {
-		case.Message(let address, let arguments):
-			execute(address, arguments)
-		case.Bundle(_, let packets):
-			packets.forEach { $0.parse(message: execute) }
+extension Packet: Sequence {
+	public struct Iterator: IteratorProtocol {
+		var stack: Array<Packet>
+		mutating public func next() -> Optional<(String, Array<Argument>)> {
+			while let element = stack.popLast() {
+				switch element {
+				case.Message(let address, let arguments):
+					return.some((address, arguments))
+				case.Bundle(_, let packets):
+					stack.append(contentsOf: packets.reversed())
+				}
+			}
+			return.none
 		}
 	}
-	public var messages: AsyncStream<(String, Array<Argument>)> {
-		.init { future in
-			parse {
-				future.yield(($0, $1))
+	public func makeIterator() -> Iterator {
+		Iterator(stack: [self])
+	}
+}
+extension Packet {
+	@inlinable
+	public var allMessages: some Sequence<(String, Array<Argument>)> {
+		sequence(state: [self]) { stack in
+			while let element = stack.popLast() {
+				switch element {
+				case.Message(let address, let arguments):
+					return.some((address, arguments))
+				case.Bundle(_, let packets):
+					stack.append(contentsOf: packets.reversed())
+				}
 			}
+			return.none
 		}
 	}
 }
