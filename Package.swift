@@ -24,10 +24,15 @@ let package = Package(
 		.package(url: "https://github.com/atelierars/MUSE", branch: "develop")
     ],
     targets: [
+		.executableTarget(
+			name: "OSC-Snippets",
+			dependencies: [.target(name: "OSC")],
+			path: "OSC/Snippets"
+		),
         .target(
             name: "OSC",
             dependencies: [
-                .target(name: "Nearby"),
+//                .target(name: "Nearby"),
 				.target(name: "Socket"),
             ],
             path: "OSC/Sources"
@@ -46,11 +51,11 @@ let package = Package(
 			path: "CMTime+/Sources",
 			publicHeadersPath: "."
 		),
-		.target(
-			name: "Nearby",
-			dependencies: [.target(name: "Async+")],
-			path: "Nearby/Sources"
-		),
+//		.target(
+//			name: "Nearby",
+//			dependencies: [.target(name: "Async+")],
+//			path: "Nearby/Sources"
+//		),
 		.target(
 			name: "Socket",
 			dependencies: [.target(name: "Async+")],
