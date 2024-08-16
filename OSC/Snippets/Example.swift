@@ -12,7 +12,7 @@ final class Receiver: ObservableObject {
 	var cancellable: Optional<AnyCancellable> = .none
 	@Published var description: String = ""
 	init(port: UInt16) {
-		cancellable = UdpReceiver(on: IPv4Endpoint(addr: .loopback, port: .init(integerLiteral: port))).sink(receiveCompletion: { complete in
+		cancellable = OSC.UdpReceiver(on: IPv4Endpoint(addr: .loopback, port: .init(integerLiteral: port))).sink(receiveCompletion: { complete in
 			
 		}, receiveValue: { (endpoint, message, options) in
 			DispatchQueue.main.sync { [weak self] in
@@ -62,14 +62,14 @@ struct ReceiveView: View {
 	}
 }
 struct SenderView: View {
-	let sender = UdpSender<IPv4Endpoint>()
+	let sender = OSC.UdpSender<IPv4Endpoint>()
 	@State var host: String = "127.0.0.1"
 	@State var port: UInt16 = 16384
 	@State var message: String = "/address"
 	@State var argument: Int32 = 0
 	func send() {
 		guard let target = IPv4Address(host) else { return }
-		sender.send(message: message, with: [.i32(argument)], to: .init(addr: target, port: NWEndpoint.Port(integerLiteral: port)))
+		sender.send(message: message, with: [.init(argument)], to: .init(addr: target, port: NWEndpoint.Port(integerLiteral: port)))
 	}
 	var body: some View {
 		VStack {
@@ -79,7 +79,7 @@ struct SenderView: View {
 			}
 			HStack {
 				TextField("Address", text: $message)
-				TextField("Argumentadr", value: $argument, format: .number)
+				TextField("Argument", value: $argument, format: .number)
 			}
 			// Push button to send message and integer argument to remote osc receiver
 			Button("Send", action: send)
