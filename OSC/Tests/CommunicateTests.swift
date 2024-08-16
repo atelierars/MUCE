@@ -6,30 +6,26 @@ final class CommunicationTests: XCTestCase {
 		expectation.expectedFulfillmentCount = 2
 		let receiver = OSC.UdpReceiver(on: IPv4Endpoint(addr: .loopback, port: 5598))
 		Task {
-			for try await (packet, endpoint) in receiver.values.prefix(1) {
+			for try await (endpoint, address, argument) in receiver.values.prefix(1) {
 				XCTAssertEqual(endpoint.addr, .loopback)
-				for await message in packet.messages {
-					switch message {
-					case ("/address", let arguments):
-						XCTAssertEqual(arguments, [1,2.0,"3",false,true,nil])
-						expectation.fulfill()
-					default:
-						XCTFail()
-					}
+				switch address {
+				case "/address":
+					XCTAssertEqual(argument, [1,2.0,"3",false,true,nil])
+					expectation.fulfill()
+				default:
+					XCTFail()
 				}
 			}
 		}
 		Task {
-			for try await (packet, endpoint) in receiver.values.prefix(1) {
+			for try await (endpoint, address, argument) in receiver.values.prefix(1) {
 				XCTAssertEqual(endpoint.addr, .loopback)
-				for await message in packet.messages {
-					switch message {
-					case ("/address", let arguments):
-						XCTAssertEqual(arguments, [1,2.0,"3",false,true,nil])
-						expectation.fulfill()
-					default:
-						XCTFail()
-					}
+				switch address {
+				case "/address":
+					XCTAssertEqual(argument, [1,2.0,"3",false,true,nil])
+					expectation.fulfill()
+				default:
+					XCTFail()
 				}
 			}
 		}
