@@ -21,7 +21,7 @@ let package = Package(
 		)
 	],
 	dependencies: [
-		.package(url: "https://github.com/atelierars/MUSE", branch: "develop")
+		.package(url: "https://github.com/atelierars/MUSE", branch: "release")
 	],
 	targets: [
 		.executableTarget(
@@ -34,6 +34,7 @@ let package = Package(
 			dependencies: [
 //                .target(name: "Nearby"),
 				.target(name: "Socket"),
+				.product(name: "RationalNumbers", package: "MUSE")
 			],
 			path: "OSC/Sources"
 		),
