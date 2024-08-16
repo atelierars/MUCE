@@ -10,6 +10,8 @@ import class Dispatch.DispatchSource
 import class Dispatch.DispatchQueue
 import protocol Dispatch.DispatchSourceRead
 import Combine
+import struct Network.IPv4Address
+import struct Network.IPv6Address
 public struct UdpStream<Endpoint: IPEndpoint>: @unchecked Sendable {
 	@usableFromInline
 	let handle: UdpSocket<Endpoint>
@@ -68,10 +70,38 @@ extension UdpStream {
 		handle.send(data: data, to: endpoint)
 	}
 }
+extension UdpStream where Endpoint.Address == IPv4Address {
+	@discardableResult
+	public func join(multicast address: Endpoint.Address, via interface: Endpoint.Address) -> Result<(), NWError> {
+		handle.join(multicast: address, via: interface)
+	}
+	@discardableResult
+	public func leave(multicast address: Endpoint.Address, via interface: Endpoint.Address) -> Result<(), NWError> {
+		handle.leave(multicast: address, via: interface)
+	}
+	@discardableResult
+	public func set(multicastTTL count: UInt8) -> Result<(), NWError> {
+		handle.set(multicastTTL: count)
+	}
+}
+extension UdpStream where Endpoint.Address == IPv6Address {
+	@discardableResult
+	public func join(multicast address: Endpoint.Address, via interface: UInt32) -> Result<(), NWError> {
+		handle.join(multicast: address, via: interface)
+	}
+	@discardableResult
+	public func leave(multicast address: Endpoint.Address, via interface: UInt32) -> Result<(), NWError> {
+		handle.leave(multicast: address, via: interface)
+	}
+	@discardableResult
+	public func set(multicastTTL count: UInt32) -> Result<(), NWError> {
+		handle.set(multicastTTL: count)
+	}
+}
 extension UdpStream: Publisher {
 	public typealias Output = (Data, Endpoint)
 	public typealias Failure = NWError
-	public func receive<S>(subscriber: S) where S : Subscriber, NWError == S.Failure, (Data, Endpoint) == S.Input {
+	public func receive<S>(subscriber: S) where S : Subscriber, (Data, Endpoint) == S.Input, NWError == S.Failure {
 		vendor.receive(subscriber: subscriber)
 	}
 }
