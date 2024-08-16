@@ -6,7 +6,7 @@
 //
 import struct Foundation.Data
 import RegexBuilder
-public enum Packet {
+@frozen public enum Packet {
 	case Message(address: String, arguments: Array<Argument>)
 	case Bundle(at: TimeTag, packets: Array<Packet>)
 }
