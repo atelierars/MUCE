@@ -69,10 +69,42 @@ extension UdpSocket {
 	}
 }
 extension UdpSocket where Endpoint == IPv4Endpoint {
-	
+	@discardableResult
+	public func join(multicast address: IPv4Address, via interface: IPv4Address) -> Result<(), NWError> {
+		handle.setsockopt(level: IPPROTO_IP, name: IP_ADD_MEMBERSHIP, value: ip_mreq(
+			imr_multiaddr: address.rawValue.withUnsafeBytes { $0.load(as: in_addr.self) },
+			imr_interface: interface.rawValue.withUnsafeBytes { $0.load(as: in_addr.self) }
+		))
+	}
+	@discardableResult
+	public func leave(multicast address: IPv4Address, via interface: IPv4Address) -> Result<(), NWError> {
+		handle.setsockopt(level: IPPROTO_IP, name: IP_DROP_MEMBERSHIP, value: ip_mreq(
+			imr_multiaddr: address.rawValue.withUnsafeBytes { $0.load(as: in_addr.self) },
+			imr_interface: interface.rawValue.withUnsafeBytes { $0.load(as: in_addr.self) }
+		))
+	}
+	@discardableResult
+	public func set(multicastTTL value: UInt8) -> Result<(), NWError> {
+		handle.setsockopt(level: IPPROTO_IP, name: IP_MULTICAST_TTL, value: value)
+	}
 }
 extension UdpSocket where Endpoint == IPv6Endpoint {
-	
+	@discardableResult
+	public func join(multicast address: IPv6Address, via interface: UInt32) -> Result<(), NWError> {
+		handle.setsockopt(level: IPPROTO_IPV6, name: IPV6_JOIN_GROUP, value: ipv6_mreq(
+			ipv6mr_multiaddr: address.rawValue.withUnsafeBytes { $0.load(as: in6_addr.self) },
+			ipv6mr_interface: interface))
+	}
+	@discardableResult
+	public func leave(multicast address: IPv4Address, via interface: UInt32) -> Result<(), NWError> {
+		handle.setsockopt(level: IPPROTO_IPV6, name: IPV6_LEAVE_GROUP, value: ipv6_mreq(
+			ipv6mr_multiaddr: address.rawValue.withUnsafeBytes { $0.load(as: in6_addr.self) },
+			ipv6mr_interface: interface))
+	}
+	@discardableResult
+	public func set(multicastTTL value: UInt32) -> Result<(), NWError> {
+		handle.setsockopt(level: IPPROTO_IPV6, name: IPV6_MULTICAST_HOPS, value: value)
+	}
 }
 extension UdpSocket: Identifiable {
 	@inlinable
