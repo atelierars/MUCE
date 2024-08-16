@@ -1,0 +1,4 @@
+module CMTimePlus {
+    header "CMTime+.h"
+    export *
+}
