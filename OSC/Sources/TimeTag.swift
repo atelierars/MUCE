@@ -8,6 +8,7 @@ import struct Foundation.Date
 import typealias Foundation.TimeInterval
 import struct CoreMedia.CMTime
 import func Darwin.modf
+import func Integer_.gcd
 public struct TimeTag {
 	@usableFromInline
 	typealias RawValue = UInt64
@@ -95,8 +96,4 @@ extension CMTime {
 		let factor = max(3, gcd(time.rawValue, 1 << 32))
 		self.init(value: .init(time.rawValue / factor), timescale: .init((1 << 32) / factor))
 	}
-}
-@inline(__always)
-private func gcd<T: BinaryInteger>(_ x: T, _ y: T) -> T {
-	y == .zero ? x : gcd(y, x % y)
 }
