@@ -68,16 +68,16 @@ extension UdpSocket {
 		handle.recv(count: count)
 	}
 }
-extension UdpSocket where Endpoint == IPv4Endpoint {
+extension UdpSocket where Endpoint.Address == IPv4Address {
 	@discardableResult
-	public func join(multicast address: IPv4Address, via interface: IPv4Address) -> Result<(), NWError> {
+	public func join(multicast address: Endpoint.Address, via interface: Endpoint.Address) -> Result<(), NWError> {
 		handle.setsockopt(level: IPPROTO_IP, name: IP_ADD_MEMBERSHIP, value: ip_mreq(
 			imr_multiaddr: address.rawValue.withUnsafeBytes { $0.load(as: in_addr.self) },
 			imr_interface: interface.rawValue.withUnsafeBytes { $0.load(as: in_addr.self) }
 		))
 	}
 	@discardableResult
-	public func leave(multicast address: IPv4Address, via interface: IPv4Address) -> Result<(), NWError> {
+	public func leave(multicast address: Endpoint.Address, via interface: Endpoint.Address) -> Result<(), NWError> {
 		handle.setsockopt(level: IPPROTO_IP, name: IP_DROP_MEMBERSHIP, value: ip_mreq(
 			imr_multiaddr: address.rawValue.withUnsafeBytes { $0.load(as: in_addr.self) },
 			imr_interface: interface.rawValue.withUnsafeBytes { $0.load(as: in_addr.self) }
@@ -88,15 +88,15 @@ extension UdpSocket where Endpoint == IPv4Endpoint {
 		handle.setsockopt(level: IPPROTO_IP, name: IP_MULTICAST_TTL, value: value)
 	}
 }
-extension UdpSocket where Endpoint == IPv6Endpoint {
+extension UdpSocket where Endpoint.Address == IPv6Address {
 	@discardableResult
-	public func join(multicast address: IPv6Address, via interface: UInt32) -> Result<(), NWError> {
+	public func join(multicast address: Endpoint.Address, via interface: UInt32) -> Result<(), NWError> {
 		handle.setsockopt(level: IPPROTO_IPV6, name: IPV6_JOIN_GROUP, value: ipv6_mreq(
 			ipv6mr_multiaddr: address.rawValue.withUnsafeBytes { $0.load(as: in6_addr.self) },
 			ipv6mr_interface: interface))
 	}
 	@discardableResult
-	public func leave(multicast address: IPv4Address, via interface: UInt32) -> Result<(), NWError> {
+	public func leave(multicast address: Endpoint.Address, via interface: UInt32) -> Result<(), NWError> {
 		handle.setsockopt(level: IPPROTO_IPV6, name: IPV6_LEAVE_GROUP, value: ipv6_mreq(
 			ipv6mr_multiaddr: address.rawValue.withUnsafeBytes { $0.load(as: in6_addr.self) },
 			ipv6mr_interface: interface))
