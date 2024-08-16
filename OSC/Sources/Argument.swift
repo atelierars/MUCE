@@ -65,9 +65,48 @@ extension Argument: ExpressibleByNilLiteral {
 	}
 }
 extension Argument {
+	// standards
 	@inlinable
-	public init(_ data: some DataProtocol) {
-		self = .blob(.init(data))
+	public init(_ value: Int32) {
+		self = .i32(value)
+	}
+	@inlinable
+	public init(_ value: Float32) {
+		self = .f32(value)
+	}
+	@inlinable
+	public init(_ value: String) {
+		self = .text(value)
+	}
+	@inlinable
+	public init(_ value: Data) {
+		self = .blob(value)
+	}
+	// alternative
+	@inlinable
+	public init(_ value: Int64) {
+		self = .i64(value)
+	}
+	@inlinable
+	public init(_ value: Float64) {
+		self = .f64(value)
+	}
+	@inlinable
+	public init(_ value: Character) {
+		self = .char(value)
+	}
+	@inlinable
+	public init(_ value: TimeTag) {
+		self = .time(value)
+	}
+	// special
+	@inlinable
+	public init(_ value: Bool) {
+		self = .bool(value)
+	}
+	@inlinable
+	public init(_ value: ()) {
+		self = .nil
 	}
 }
 extension Argument {
