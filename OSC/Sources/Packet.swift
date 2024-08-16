@@ -56,35 +56,6 @@ extension Packet: Sequence {
 }
 extension Packet {
 	@inlinable
-	public var allMessages: some Sequence<(String, Array<Argument>)> {
-		sequence(state: [self]) { stack in
-			while let element = stack.popLast() {
-				switch element {
-				case.Message(let address, let arguments):
-					return.some((address, arguments))
-				case.Bundle(_, let packets):
-					stack.append(contentsOf: packets.reversed())
-				}
-			}
-			return.none
-		}
-	}
-}
-extension Packet {
-	@inlinable
-	func parse(at time: TimeTag, execute: (TimeTag, String, Array<Argument>) -> Void) {
-		switch self {
-		case.Message(let address, let arguments):
-			execute(time, address, arguments)
-		case.Bundle(let time, let packets):
-			packets.forEach {
-				$0.parse(at: time, execute: execute)
-			}
-		}
-	}
-}
-extension Packet {
-	@inlinable
 	public var isStandard: Bool {
 		switch self {
 		case.Message(let address, let arguments):
