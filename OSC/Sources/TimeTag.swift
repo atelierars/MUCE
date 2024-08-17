@@ -9,7 +9,7 @@ import typealias Foundation.TimeInterval
 import struct CoreMedia.CMTime
 import func Darwin.modf
 import func Integer_.gcd
-public struct TimeTag {
+@frozen public struct TimeTag {
 	@usableFromInline
 	typealias RawValue = UInt64
 	@usableFromInline
@@ -17,7 +17,7 @@ public struct TimeTag {
 }
 extension TimeTag: ExpressibleByIntegerLiteral {
 	public static let immediately: Self = 0
-	public static let infinitum: Self = .init(rawValue: ~0)
+	public static let distantFuture: Self = .init(rawValue: ~0)
 	@inlinable
 	public init(integerLiteral value: UInt64) {
 		rawValue = value << 32
@@ -41,8 +41,20 @@ extension TimeTag: Hashable {
 }
 extension TimeTag: Comparable {
 	@inlinable
-	public static func < (lhs: TimeTag, rhs: TimeTag) -> Bool {
-		lhs.rawValue < rhs.rawValue
+	public static func<(lhs: TimeTag, rhs: TimeTag) -> Bool {
+		lhs.rawValue<rhs.rawValue
+	}
+	@inlinable
+	public static func>(lhs: TimeTag, rhs: TimeTag) -> Bool {
+		lhs.rawValue>rhs.rawValue
+	}
+	@inlinable
+	public static func<=(lhs: TimeTag, rhs: TimeTag) -> Bool {
+		lhs.rawValue<=rhs.rawValue
+	}
+	@inlinable
+	public static func>=(lhs: TimeTag, rhs: TimeTag) -> Bool {
+		lhs.rawValue>=rhs.rawValue
 	}
 }
 extension TimeTag: CustomStringConvertible {
