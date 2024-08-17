@@ -5,28 +5,14 @@
 //  Created by kotan.kn on 7/31/24.
 //
 import struct Foundation.Data
-import RegexBuilder
-@frozen public enum Packet {
+@frozen enum Packet {
 	case Message(address: String, arguments: Array<Argument>)
 	case Bundle(at: TimeTag, packets: Array<Packet>)
 }
-extension Packet {
-	public init(address: String, arguments: Array<Argument> = .init()) {
-		self = .Message(address: address, arguments: arguments)
-	}
-	public init(at time: TimeTag = .immediately, messages: Array<(String, Array<Argument>)>) {
-		self = .Bundle(at: time, packets: messages.map { Packet.Message(address: $0, arguments: $1) })
-	}
-	public init(at time: TimeTag = .immediately, packets: Array<Self>) {
-		self = .Bundle(at: time, packets: packets)
-	}
-}
-extension Packet: Equatable {
-	
-}
+extension Packet: Equatable {}
 extension Packet: CustomStringConvertible {
 	@inlinable
-	public var description: String {
+	var description: String {
 		switch self {
 		case.Message(let address, let arguments):
 			"\(address) \(arguments)"
@@ -36,13 +22,14 @@ extension Packet: CustomStringConvertible {
 	}
 }
 extension Packet: Sequence {
-	public struct Iterator: IteratorProtocol {
+	@usableFromInline
+	struct Iterator: IteratorProtocol {
 		var stack: Array<Packet>
-		mutating public func next() -> Optional<(String, Array<Argument>)> {
+		mutating public func next() -> Optional<Message> {
 			while let element = stack.popLast() {
 				switch element {
 				case.Message(let address, let arguments):
-					return.some((address, arguments))
+					return.some(.init(address, with: arguments))
 				case.Bundle(_, let packets):
 					stack.append(contentsOf: packets.reversed())
 				}
@@ -50,23 +37,25 @@ extension Packet: Sequence {
 			return.none
 		}
 	}
-	public func makeIterator() -> Iterator {
+	@inlinable
+	func makeIterator() -> Iterator {
 		Iterator(stack: [self])
 	}
 }
 extension Packet {
 	@inlinable
-	public var isStandard: Bool {
+	var isStandard: Bool {
 		switch self {
 		case.Message(let address, let arguments):
 			address.starts(with: "/") && arguments.allSatisfy { $0.isStandard }
-		case.Bundle(_, let arguments):
-			!arguments.isEmpty
+		case.Bundle(_, let packets):
+			packets.allSatisfy { $0.isStandard }
 		}
 	}
 }
 extension Packet: RawRepresentable {
-	public init?(rawValue: Data) {
+	@inlinable
+	init?(rawValue: Data) {
 		var data = rawValue
 		let type = data.pop { $0 != .zero }
 		switch String(data: type, encoding: .utf8) {
@@ -96,21 +85,9 @@ extension Packet: RawRepresentable {
 			return nil
 		}
 	}
-	public var rawValue: Data {
+	@inlinable
+	var rawValue: Data {
 		switch self {
-		case.Message(let address, let arguments):
-			address.replacingOccurrences(of: "\0", with: "").data(using: .utf8).map { addr in
-				var head = Data()
-				var body = Data()
-				head.append(("," as Character).asciiValue.unsafelyUnwrapped)
-				arguments.forEach {
-					$0.encode(into: &head, with: &body)
-				}
-				return
-					addr + Data(count: 4 - addr.count % 4) +
-					head + Data(count: 4 - head.count % 4) +
-					body + Data(count: 3 - ( body.count + 3 ) % 4)
-			} ?? .init()
 		case.Bundle(let time, let packets):
 			"#bundle".data(using: .utf8).map {
 				var data = $0
@@ -128,6 +105,19 @@ extension Packet: RawRepresentable {
 					data.append(packet)
 				}
 				return data
+			} ?? .init()
+		case.Message(let address, let arguments):
+			address.data(using: .utf8).map { addr in
+				var head = Data()
+				var body = Data()
+				head.append(("," as Character).asciiValue.unsafelyUnwrapped)
+				arguments.forEach {
+					$0.encode(into: &head, with: &body)
+				}
+				return
+					addr + Data(count: 4 - addr.count % 4) +
+					head + Data(count: 4 - head.count % 4) +
+					body + Data(count: 3 - ( body.count + 3 ) % 4)
 			} ?? .init()
 		}
 	}
