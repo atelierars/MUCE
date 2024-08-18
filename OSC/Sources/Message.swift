@@ -71,6 +71,7 @@ extension Message {
 	}
 }
 extension Message {
+	@inlinable
 	public var isStandard: Bool {
 		address.starts(with: "/") && arguments.allSatisfy { $0.isStandard }
 	}
@@ -93,7 +94,7 @@ extension Message: RandomAccessCollection & MutableCollection {
 extension Message {
 	@inlinable
 	public static func~=(lhs: String, rhs: Self) -> Bool {
-		(try?Regex(glob: rhs.address)).flatMap(lhs.wholeMatch(of:)) != nil
+		(try?Regex(osc: rhs.address)).flatMap(lhs.wholeMatch(of:)) != nil
 	}
 //	public static func~=(lhs: Self, rhs: some StringProtocol) -> Bool {
 //		(try?Regex(glob: rhs)).flatMap(lhs.address.wholeMatch(of:)) != nil
