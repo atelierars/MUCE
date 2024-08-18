@@ -7,6 +7,7 @@
 import Combine
 import Socket
 import enum Network.NWError
+import var Darwin.errno
 public final class UdpSender<Endpoint: IPEndpoint> {
 	let socket: Result<UdpSocket<Endpoint>, NWError>
 	var subscribings: Set<AnyCancellable>
@@ -20,28 +21,34 @@ public final class UdpSender<Endpoint: IPEndpoint> {
 }
 extension UdpSender {
 	@discardableResult
-	public func send(packet: Packet, to endpoint: Endpoint) -> Result<Int, NWError> {
+	func send(packet: Packet, to endpoint: Endpoint) -> Result<(), NWError> {
 		socket.flatMap { handle in
-			packet.rawValue.withUnsafeBytes {
-				handle.send(data: $0, to: endpoint)
+			packet.rawValue.withUnsafeBytes { data in
+				handle.send(data: data, to: endpoint).flatMap {
+					$0 == data.count ? .success(()) : .failure(.posix(.init(rawValue: errno).unsafelyUnwrapped))
+				}
 			}
 		}
 	}
 	@discardableResult
-	public func send(message address: String, with arguments: Array<Argument> = [], to endpoint: Endpoint) -> Result<Int, NWError> {
-		send(packet: .Message(address: address, arguments: arguments), to: endpoint)
+	public func send(message: Message, to endpoint: Endpoint) -> Result<(), NWError> {
+		send(packet: .init(message: message), to: endpoint)
 	}
 	@discardableResult
-	public func send(messages: Array<(String, Array<Argument>)>, to endpoint: Endpoint) -> Result<Int, NWError> {
-		send(packet: .Bundle(at: .immediately, packets: messages.map(Packet.Message)), to: endpoint)
+	public func send(messages: some Sequence<Message>, at time: TimeTag = .immediately, to endpoint: Endpoint) -> Result<(), NWError> {
+		send(packet: .init(at: time, messages: messages), to: endpoint)
 	}
 }
 extension UdpSender: Subscriber {
-	public typealias Input = (Packet, Endpoint)
+	public typealias Input = (Message, Endpoint)
 	public typealias Failure = Never
-	public func receive(_ input: (Packet, Endpoint)) -> Subscribers.Demand {
-		send(packet: input.0, to: input.1)
-		return.unlimited
+	public func receive(_ input: (Message, Endpoint)) -> Subscribers.Demand {
+		switch send(message: input.0, to: input.1) {
+		case.success:
+			.unlimited
+		case.failure:
+			.none
+		}
 	}
 	public func receive(completion: Subscribers.Completion<Never>) {
 		
