@@ -10,15 +10,14 @@ import struct Foundation.Data
 	case Bundle(at: TimeTag, packets: Array<Packet>)
 }
 extension Packet: Equatable {}
-extension Packet: CustomStringConvertible {
+extension Packet {
 	@inlinable
-	var description: String {
-		switch self {
-		case.Message(let address, let arguments):
-			"\(address) \(arguments)"
-		case.Bundle(let time, let packets):
-			"\(time) \(packets)"
-		}
+	init(message: Message) {
+		self = .Message(address: message.address, arguments: message.arguments)
+	}
+	@inlinable
+	init(at time: TimeTag = .immediately, messages: some Sequence<Message>) {
+		self = .Bundle(at: time, packets: messages.map(Self.init))
 	}
 }
 extension Packet: Sequence {
