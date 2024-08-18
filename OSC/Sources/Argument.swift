@@ -79,8 +79,8 @@ extension Argument {
 		self = .text(value)
 	}
 	@inlinable
-	public init(_ value: Data) {
-		self = .blob(value)
+	public init(_ value: some DataProtocol) {
+		self = .blob(.init(value))
 	}
 	// alternative
 	@inlinable
@@ -100,6 +100,10 @@ extension Argument {
 		self = .time(value)
 	}
 	// special
+	@inlinable
+	public init(_ value: some Sequence<Self>) {
+		self = .array(.init(value))
+	}
 	@inlinable
 	public init(_ value: Bool) {
 		self = .bool(value)
@@ -363,6 +367,7 @@ extension Argument {
 	}
 }
 extension Argument {
+	@inlinable
 	func encode(into tags: inout some MutableDataProtocol, with data: inout some MutableDataProtocol) {
 		switch self {
 		case.i32(let value):
