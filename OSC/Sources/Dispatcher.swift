@@ -9,6 +9,7 @@ import RegexBuilder
 import Combine
 import Socket
 import os.log
+import enum Socket.NWError
 public class Dispatcher<Endpoint: IPEndpoint> {
 	public typealias Failure = NWError
 	@usableFromInline
