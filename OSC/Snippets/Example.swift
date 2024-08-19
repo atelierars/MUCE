@@ -12,10 +12,10 @@ final class Receiver: ObservableObject {
 	var dispatcher: Dispatcher<IPv4Endpoint> = .init()
 	@Published var description: String = ""
 	init(port: UInt16) {
-		// accept any message
-		dispatcher.add(for: "/address") { [weak self] address, arguments, endpoint in
+		// accept any message starts with '/', capture target, specified by Regex literal
+		dispatcher.add(for: /\/(?<root>.*)/) { [weak self] address, arguments, endpoint in
 			guard let self else { return }
-			description = [address, arguments.description, "from", endpoint.description].joined(separator: " ")
+			description = [String(address.root), arguments.description, "from", endpoint.description].joined(separator: " ")
 			objectWillChange.send()
 		}
 		/*
@@ -90,7 +90,7 @@ struct SenderView: View {
 	@State var host: String = "127.0.0.1"
 	@State var port: UInt16 = 16384
 	@State var address: String = "/address"
-	@State var argument: Int64 = 1
+	@State var argument: Int32 = 1
 	func send() {
 		guard let target = IPv4Address(host) else { return }
 		var message = Message(address)
