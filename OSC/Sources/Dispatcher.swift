@@ -76,7 +76,6 @@ extension Dispatcher: Subscriber {
 	}
 	@inlinable
 	public func receive(completion: Subscribers.Completion<Failure>) {
-		Swift.print("125")
 		broker.send(completion: completion)
 	}
 }
