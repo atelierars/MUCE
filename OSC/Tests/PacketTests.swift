@@ -44,8 +44,8 @@ final class PacketTests: XCTestCase {
 					.Message(address: "/sub/sub/1", arguments: [1, [3, [
 						"5",
 						["120", true],
-						[false, .blob(Data([1,2,3]))],
-						nil
+						[false, Data([1,2,3])],
+						nil as Nil
 					], 4], 2]),
 					.Message(address: "/sub/sub/2", arguments: ["EOF"]),
 				]),
