@@ -9,7 +9,11 @@ import protocol Foundation.ContiguousBytes
 import class Dispatch.DispatchSource
 import class Dispatch.DispatchQueue
 import protocol Dispatch.DispatchSourceRead
-import Combine
+import protocol Combine.Publisher
+import protocol Combine.Subscriber
+import enum Combine.Publishers
+import class Combine.PassthroughSubject
+import struct Combine.Deferred
 import struct Network.IPv4Address
 import struct Network.IPv6Address
 public struct UdpStream<Endpoint: IPEndpoint>: @unchecked Sendable {
@@ -101,7 +105,7 @@ extension UdpStream where Endpoint.Address == IPv6Address {
 extension UdpStream: Publisher {
 	public typealias Output = (Data, Endpoint)
 	public typealias Failure = NWError
-	public func receive<S>(subscriber: S) where S : Subscriber, (Data, Endpoint) == S.Input, NWError == S.Failure {
+	public func receive(subscriber: some Subscriber<Output, Failure>) {
 		vendor.receive(subscriber: subscriber)
 	}
 }
