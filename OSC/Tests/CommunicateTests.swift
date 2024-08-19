@@ -10,7 +10,7 @@ final class CommunicationTests: XCTestCase {
 				XCTAssertEqual(endpoint.addr, .loopback)
 				switch message {
 				case "/address":
-					XCTAssertEqual(message.arguments, [1,2.0,"3",false,true,nil])
+					XCTAssertEqual(message.arguments.rawValue, [1,2.0,"3",false,true].rawValue)
 					expectation.fulfill()
 				default:
 					XCTFail()
@@ -22,7 +22,7 @@ final class CommunicationTests: XCTestCase {
 				XCTAssertEqual(endpoint.addr, .loopback)
 				switch message {
 				case "/address":
-					XCTAssertEqual(message.arguments, [1,2.0,"3",false,true,nil])
+					XCTAssertEqual(message.arguments.rawValue, [1,2.0,"3",false,true].rawValue)
 					expectation.fulfill()
 				default:
 					XCTFail()
@@ -32,11 +32,11 @@ final class CommunicationTests: XCTestCase {
 		let sender = OSC.UdpSender<IPv4Endpoint>()
 		try await Task.sleep(for: Duration.milliseconds(1)) // dispatch coroutine
 		sender.send(packet: .Bundle(at: 0, packets: [
-			.Message(address: "/address", arguments: [1,2.0,"3",false,true,nil])
+			.Message(address: "/address", arguments: [1,2.0,"3",false,true])
 		]), to: .init(addr: .loopback, port: 5598))
 		try await Task.sleep(for: Duration.milliseconds(1)) // dispatch coroutine
 		sender.send(packet: .Bundle(at: 0, packets: [
-			.Message(address: "/address", arguments: [1,2.0,"3",false,true,nil])
+			.Message(address: "/address", arguments: [1,2.0,"3",false,true])
 		]), to: .init(addr: .loopback, port: 5598))
 		await fulfillment(of: [expectation], timeout: 3)
 	}
