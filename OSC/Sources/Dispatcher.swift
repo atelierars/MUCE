@@ -4,6 +4,7 @@
 //
 //  Created by kotan.kn on 8/4/R6.
 //
+import struct Foundation.UUID
 import RegexBuilder
 import Combine
 import Socket
@@ -13,7 +14,7 @@ public class Dispatcher<Endpoint: IPEndpoint> {
 	@usableFromInline
 	let broker: PassthroughSubject<Input, Failure>
 	@usableFromInline
-	var invoke: Array<((Message, Endpoint)) -> Bool>
+	var invoke: Dictionary<UUID, ((Message, Endpoint)) -> Bool> = [:]
 	@usableFromInline
 	var cancel: Set<AnyCancellable>
 	public init() {
@@ -27,15 +28,21 @@ public class Dispatcher<Endpoint: IPEndpoint> {
 }
 extension Dispatcher {
 	@inlinable
-	public func add(handler: @escaping (Message, Endpoint) -> Bool) {
-		invoke.append(handler)
+	@discardableResult
+	public func invoke(handler: @escaping (Message, Endpoint) -> Bool) -> UUID {
+		let id = UUID()
+		defer {
+			invoke.updateValue(handler, forKey: id)
+		}
+		return id
 	}
 	@inlinable
-	public func add(for receiver: String, execute body: @escaping (String, Arguments, Endpoint) -> Void) {
-		invoke.append {
+	@discardableResult
+	public func invoke(for path: String, execute body: @escaping (String, Arguments, Endpoint) -> Void) -> UUID {
+		invoke {
 			switch $0 {
-			case receiver:
-				body($0.address, $0.arguments, $1)
+			case path:
+				body(path, $0.arguments, $1)
 				return true
 			default:
 				return false
@@ -43,8 +50,9 @@ extension Dispatcher {
 		}
 	}
 	@inlinable
-	public func add<Output>(for pattern: Regex<Output>, execute body: @escaping (Output, Arguments, Endpoint) -> Void) {
-		invoke.append {
+	@discardableResult
+	public func invoke<Output>(for pattern: Regex<Output>, execute body: @escaping (Output, Arguments, Endpoint) -> Void) -> UUID {
+		invoke {
 			switch $0.address.firstMatch(of: pattern) {
 			case.some(let match):
 				body(match.output, $0.arguments, $1)
@@ -53,6 +61,11 @@ extension Dispatcher {
 				return false
 			}
 		}
+	}
+	@inlinable
+	@discardableResult
+	public func remove(invoke id: UUID) -> Bool {
+		invoke.removeValue(forKey: id) != nil
 	}
 }
 extension Dispatcher: Subscriber {
@@ -63,26 +76,24 @@ extension Dispatcher: Subscriber {
 		subscription.request(.unlimited)
 	}
 	@inlinable
+	public func receive(completion: Subscribers.Completion<Failure>) {
+		broker.send(completion: completion)
+		cancel.removeAll()
+	}
+	@inlinable
 	@discardableResult
 	public func receive(_ input: Input) -> Subscribers.Demand {
-		let result = invoke.first { $0(input) }
-		switch result {
-		case.some:
-			break
-		case.none:
+		let result = invoke.values.filter { $0(input) }.isEmpty
+		if result {
 			broker.send(input)
 		}
 		return.unlimited
 	}
-	@inlinable
-	public func receive(completion: Subscribers.Completion<Failure>) {
-		broker.send(completion: completion)
-	}
 }
-extension Dispatcher: Publisher {
+extension Dispatcher: Publisher { // Publish not recept messages
 	public typealias Output = (Message, Endpoint)
 	@inlinable
-	public func receive<S>(subscriber: S) where S : Subscriber, Output == S.Input, NWError == S.Failure {
+	public func receive(subscriber: some Subscriber<Output, Failure>) {
 		broker.receive(subscriber: subscriber)
 	}
 }
