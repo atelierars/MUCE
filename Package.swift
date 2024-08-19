@@ -27,7 +27,10 @@ let package = Package(
 		.executableTarget(
 			name: "OSC-Snippets",
 			dependencies: [.target(name: "OSC")],
-			path: "OSC/Snippets"
+			path: "OSC/Snippets",
+			swiftSettings: [
+				.unsafeFlags(["-enable-bare-slash-regex"])
+			]
 		),
 		.target(
 			name: "OSC",
