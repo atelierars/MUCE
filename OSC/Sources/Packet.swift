@@ -23,8 +23,10 @@ extension Packet {
 extension Packet: Sequence {
 	@usableFromInline
 	struct Iterator: IteratorProtocol {
+		@usableFromInline
 		var stack: Array<Packet>
-		mutating public func next() -> Optional<Message> {
+		@inlinable
+		mutating func next() -> Optional<Message> {
 			while let element = stack.popLast() {
 				switch element {
 				case.Message(let address, let arguments):
@@ -36,7 +38,6 @@ extension Packet: Sequence {
 			return.none
 		}
 	}
-	@inlinable
 	func makeIterator() -> Iterator {
 		Iterator(stack: [self])
 	}
