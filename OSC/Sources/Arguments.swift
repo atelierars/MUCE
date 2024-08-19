@@ -27,7 +27,7 @@ extension Arguments {
 		// special
 		Arguments.self,
 		Bool.self,
-		Nil.self
+		OSC.Nil.self
 	]
 	@inlinable
 	static func Decode(from osc: inout (tags: Substring, body: some MutableDataProtocol)) -> Optional<Argument> {
@@ -239,13 +239,7 @@ extension Bool: Argument {
 		osc.tags.append(self ? "T" : "F")
 	}
 }
-
-public struct Nil {
-	
-}
-extension Nil: ExpressibleByNilLiteral {
-	public init(nilLiteral: ()) {}
-}
+struct Nil {}
 extension Nil: Argument {
 	public init?(from osc: inout (tags: Substring, body: some MutableDataProtocol)) {
 		guard case.some("N") = osc.tags.first else { return nil }
@@ -256,7 +250,7 @@ extension Nil: Argument {
 		osc.tags.append("N")
 	}
 }
-public struct Impulse {}
+struct Impulse {}
 extension Impulse: Argument {
 //	@inlinable
 	public init?(from osc: inout (tags: Substring, body: some MutableDataProtocol)) {
@@ -266,4 +260,8 @@ extension Impulse: Argument {
 	public func encode(into osc: inout (tags: Substring, body: some MutableDataProtocol)) {
 		osc.tags.append("I")
 	}
+}
+extension Arguments {
+	public static let Nil: some Argument = OSC.Nil()
+	public static let Impulse: some Argument = OSC.Impulse()
 }
