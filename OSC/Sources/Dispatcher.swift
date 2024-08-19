@@ -31,7 +31,7 @@ extension Dispatcher {
 		invoke.append(handler)
 	}
 	@inlinable
-	public func add(for receiver: String, execute body: @escaping (String, Array<Argument>, Endpoint) -> Void) {
+	public func add(for receiver: String, execute body: @escaping (String, Arguments, Endpoint) -> Void) {
 		invoke.append {
 			switch $0 {
 			case receiver:
@@ -43,7 +43,7 @@ extension Dispatcher {
 		}
 	}
 	@inlinable
-	public func add<Output>(for pattern: Regex<Output>, execute body: @escaping (Output, Array<Argument>, Endpoint) -> Void) {
+	public func add<Output>(for pattern: Regex<Output>, execute body: @escaping (Output, Arguments, Endpoint) -> Void) {
 		invoke.append {
 			switch $0.address.firstMatch(of: pattern) {
 			case.some(let match):
@@ -63,6 +63,7 @@ extension Dispatcher: Subscriber {
 		subscription.request(.unlimited)
 	}
 	@inlinable
+	@discardableResult
 	public func receive(_ input: Input) -> Subscribers.Demand {
 		let result = invoke.first { $0(input) }
 		switch result {
