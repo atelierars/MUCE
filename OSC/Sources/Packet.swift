@@ -6,7 +6,7 @@
 //
 import struct Foundation.Data
 @frozen enum Packet {
-	case Message(address: String, arguments: Array<Argument>)
+	case Message(address: String, arguments: Arguments)
 	case Bundle(at: TimeTag, packets: Array<Packet>)
 }
 extension Packet: Equatable {}
@@ -41,17 +41,6 @@ extension Packet: Sequence {
 		Iterator(stack: [self])
 	}
 }
-extension Packet {
-	@inlinable
-	var isStandard: Bool {
-		switch self {
-		case.Message(let address, let arguments):
-			address.starts(with: "/") && arguments.allSatisfy { $0.isStandard }
-		case.Bundle(_, let packets):
-			packets.allSatisfy { $0.isStandard }
-		}
-	}
-}
 extension Packet: RawRepresentable {
 	@inlinable
 	init?(rawValue: Data) {
@@ -71,15 +60,8 @@ extension Packet: RawRepresentable {
 			self = .Bundle(at: time, packets: packets)
 		case.some(let addr):
 			data.pop(count: 4 - type.count % 4)
-			var tags = data.pop { $0 != .zero }
-			data.pop(count: 4 - tags.count % 4)
-			guard tags.popFirst().map(Unicode.Scalar.init).map(Character.init) == .some(",") else { return nil }
-			var args = Array<Argument>()
-			while !tags.isEmpty {
-				guard let value = Argument(decode: &tags, with: &data) else { return nil }
-				args.append(value)
-			}
-			self = .Message(address: addr, arguments: args)
+			guard let arguments = Arguments(rawValue: data) else { return nil }
+			self = .Message(address: addr, arguments: arguments)
 		case.none:
 			return nil
 		}
@@ -106,17 +88,8 @@ extension Packet: RawRepresentable {
 				return data
 			} ?? .init()
 		case.Message(let address, let arguments):
-			address.data(using: .utf8).map { addr in
-				var head = Data()
-				var body = Data()
-				head.append(("," as Character).asciiValue.unsafelyUnwrapped)
-				arguments.forEach {
-					$0.encode(into: &head, with: &body)
-				}
-				return
-					addr + Data(count: 4 - addr.count % 4) +
-					head + Data(count: 4 - head.count % 4) +
-					body + Data(count: 3 - ( body.count + 3 ) % 4)
+			address.data(using: .utf8).map {
+				$0 + Data(count: 4 - $0.count % 4) +  arguments.rawValue
 			} ?? .init()
 		}
 	}
