@@ -13,7 +13,7 @@ final class Receiver: ObservableObject {
 	@Published var description: String = ""
 	init(port: UInt16) {
 		// accept any message starts with '/', capture target, specified by Regex literal
-		dispatcher.add(for: /\/(?<root>.*)/) { [weak self] address, arguments, endpoint in
+		dispatcher.invoke(for: /\/(?<root>.*)/) { [weak self] address, arguments, endpoint in
 			guard let self else { return }
 			description = [String(address.root), arguments.description, "from", endpoint.description].joined(separator: " ")
 			objectWillChange.send()
@@ -26,7 +26,7 @@ final class Receiver: ObservableObject {
 			objectWillChange.send()
 		}
 		 Entry dispatcher with regex literal, RegexBuilder object and OSC pattern matcher
-		dispatcher.add(for: /address/sub?/) { [weak self] address, arguments, endpoint in
+		dispatcher.add(for: /address/sub./) { [weak self] address, arguments, endpoint in
 			guard let self else { return }
 			description = [address, "from", endpoint.description].joined(separator: " ")
 			objectWillChange.send()
@@ -39,20 +39,13 @@ final class Receiver: ObservableObject {
 		 */
 		// subscribe publisher
 		OSC.UdpReceiver(on: IPv4Endpoint(addr: .loopback, port: .init(integerLiteral: port)))
-			.receive(on: RunLoop.main)
+			.receive(on: RunLoop.main) // dispatcher should be executed by main thread in this case to update UI
 			.receive(subscriber: dispatcher)
-		/*
-		 Single dispatcher can accept multiple receiver
-		OSC.UdpReceiver(on: IPv4Endpoint(addr: .loopback, port: .init(integerLiteral: 16384)))
-			.receive(on: RunLoop.main)
-			.receive(subscriber: dispatcher)
-		 */
-		
 	}
 }
 @main
 struct App: SwiftUI.App {
-	@State var recvPort: UInt16 = 16384
+	@State var recvPort: UInt16 = 32767
 	@State var text: String = ""
 	let portFormatter: NumberFormatter
 	init() {
@@ -88,13 +81,12 @@ struct ReceiveView: View {
 struct SenderView: View {
 	let sender = OSC.UdpSender<IPv4Endpoint>()
 	@State var host: String = "127.0.0.1"
-	@State var port: UInt16 = 16384
+	@State var port: UInt16 = 32767
 	@State var address: String = "/address"
 	@State var argument: Int32 = 1
 	func send() {
 		guard let target = IPv4Address(host) else { return }
-		var message = Message(address)
-		message.append(argument)
+		var message = Message(address, with: [argument])
 		/*
 		 A message can have more arguments
 		 message.append(1.0 as Float32)
