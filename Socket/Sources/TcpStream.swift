@@ -137,7 +137,7 @@ extension TcpStream {
 extension TcpStream: Publisher {
 	public typealias Output = Data
 	public typealias Failure = NWError
-	public func receive<S>(subscriber: S) where S : Subscriber, S.Input == Data , S.Failure == NWError {
+	public func receive(subscriber: some Subscriber<Output, Failure>) {
 		vendor.receive(subscriber: subscriber)
 	}
 }
