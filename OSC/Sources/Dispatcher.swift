@@ -8,8 +8,7 @@ import struct Foundation.UUID
 import RegexBuilder
 import Combine
 import Socket
-import os.log
-import enum Socket.NWError
+import enum Network.NWError
 public class Dispatcher<Endpoint: IPEndpoint> {
 	public typealias Failure = NWError
 	@usableFromInline
