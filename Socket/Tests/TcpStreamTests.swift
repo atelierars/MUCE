@@ -85,10 +85,10 @@ final class TcpStreamTests: XCTestCase {
 		await fulfillment(of: [request], timeout: 6)
 	}
 	func testV4() async throws {
-		try await scenario(on: IPv4Endpoint(addr: .loopback, port: 16385))
+		try await scenario(on: IPv4Endpoint(addr: .loopback, port: 8194))
 	}
 	func testV6() async throws {
-		try await scenario(on: IPv6Endpoint(addr: .loopback, port: 16385))
+		try await scenario(on: IPv6Endpoint(addr: .loopback, port: 8196))
 	}
 //	func testServerClientV4() async throws {
 //		try await serverclient(on: IPv4Endpoint(addr: .loopback, port: 16385))
