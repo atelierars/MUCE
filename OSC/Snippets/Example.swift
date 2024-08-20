@@ -41,6 +41,11 @@ final class Receiver: ObservableObject {
 		OSC.UdpReceiver(on: IPv4Endpoint(addr: .loopback, port: .init(integerLiteral: port)))
 			.receive(on: RunLoop.main) // dispatcher should be executed by main thread in this case to update UI
 			.receive(subscriber: dispatcher)
+		/*
+		 single dispatcher can accept multiple sources
+		OSC.TcpReceiver(on: IPv4Endpoint(addr: .loopback, port: 32768), queue: .main)
+			.receive(subscriber: dispatcher)
+		 */
 	}
 }
 @main
