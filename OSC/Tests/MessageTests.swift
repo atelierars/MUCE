@@ -1,52 +1,55 @@
-import XCTest
+import Testing
 import RegexBuilder
 @testable import OSC
-final class MessageTests: XCTestCase {
-	func testRegexLHS() throws { // Standard style, 1 handler can accept multiple addresses
+@Suite
+struct MessageTests {
+	@Test
+	func regexLHS() throws {
 		switch "/root/abc/foo" as Message {
 		case "/root/abc/foo":
 			break // write handler here
 		default:
-			XCTFail()
+			Issue.record()
 		}
 		for query in ["/root/abc/foo", "/root/abc/bar"] as Array<Message> {
 			switch query {
 			case /\/root\/ab.\/(?:foo|bar)/:
 				break // write handler here
 			default:
-				XCTFail()
+				Issue.record()
 			}
 			switch query {
 			case try Regex(osc: #"/root/ab?/{foo,bar}"#): // regex literal and regexbuilder are better in performance
 				break // write handler here
 			default:
-				XCTFail()
+				Issue.record()
 			}
 		}
 	}
-	func testGlobLHS() throws { // Query style like Unix command, same message can be matched with multiple handlers
+	@Test
+	func globLHS() throws {
 		let query = "/root/ab?/{foo,bar}" as Message
 		switch query {
 		case "/root/abx/foo":
 			break
 		default:
-			XCTFail()
+			Issue.record()
 		}
 		switch query {
 		case "/root/abs/bar":
 			break
 		default:
-			XCTFail()
+			Issue.record()
 		}
 		switch query {
 		case "/root/ab/foo":
-			XCTFail()
+			Issue.record()
 		default:
 			break
 		}
 		switch query {
 		case "/root/ab/bar":
-			XCTFail()
+			Issue.record()
 		default:
 			break
 		}
