@@ -24,7 +24,8 @@ public protocol Synchronisable: SynchroniseSource {
 }
 extension SynchroniseSource {
 	public func udpSynchroniser<Endpoint: IPEndpoint>(on endpoint: Endpoint, queue: Optional<DispatchQueue> = .none) -> some Publisher<Endpoint, NWError>  {
-		UdpStream<Endpoint>.Incoming(on: endpoint, queue: queue).publisher
+		UdpStream<Endpoint>.Incoming(on: endpoint, queue: queue)
+			.publisher
 			.flatMap { stream in
 				let broker = PassthroughSubject<Endpoint, NWError>()
 				let cancel = stream.sink(receiveCompletion: broker.send(completion:)) {(packet, client)in
