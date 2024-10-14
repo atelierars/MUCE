@@ -1,31 +1,39 @@
-import XCTest
-import CoreMedia
+import Testing
 import Socket
+import CoreMedia
+import Dispatch
+import Synchronization
+import Combine
 @testable import Chrono
-final class SynchroniserTests: XCTestCase {
-	func testUdpSync() async throws {
-		let expectation = XCTestExpectation()
-		expectation.expectedFulfillmentCount = 5
-		Task {
-			let ticker = try Ticker()
-			try ticker.set(time: .init(seconds: 5_000_000, preferredTimescale: 1))
-			try ticker.set(rate: 1)
-			for try await endpoint in ticker.udpSynchroniser(on: IPv4Endpoint(addr: .loopback, port: 32777)).values where endpoint.addr == .loopback {
-//				print(endpoint)
-			}
-		}
+@Suite
+struct SynchroniserTests {
+	@Test(TimeLimitTrait.timeLimit(.minutes(1)))
+	func udp() async throws {
 		let ticker = try Ticker()
 		let tocker = ticker.timer(for: .init(value: 4, timescale: 5))
 		Task {
-			for try await response in ticker.udpSynchroniser(to: IPv4Endpoint(addr: .loopback, port: 32777)).values {
-//				print(response.seconds)
+			let ticker = try Ticker()
+			try ticker.set(time: .init(value: 5_000_000, timescale: 1))
+			try ticker.set(rate: 1)
+			for try await endpoint in ticker.udpSynchroniser(on: IPv4Endpoint(addr: .loopback, port: 32777)).values where endpoint.addr == .loopback {
 			}
 		}
 		Task {
-			for try await time in tocker.values where CMTime(value: 5_000_000, timescale: 1) < time {
-				expectation.fulfill()
+			let adj = Atomic<Int>(0)
+			for try await response in ticker.udpSynchroniser(to: IPv4Endpoint(addr: .loopback, port: 32777)).values where 1 < response.seconds {
+				adj.add(1, ordering: .acquiringAndReleasing)
 			}
+			#expect(adj.load(ordering: .acquiring) == 1)
 		}
-		await fulfillment(of: [expectation], timeout: 90)
+		let signal = try await Task {
+			try await tocker.values.filter {
+				CMTime(value: 5_000_000, timescale: 1) < $0
+			}.prefix(5).reduce(into: Array<CMTime>()) {
+				$0.append($1)
+			}
+		}.value
+		#expect(signal.count == 5)
+		#expect(signal.allSatisfy { CMTime(value: 5_000_000, timescale: 1) < $0 })
+		#expect(signal.allSatisfy { $0.value % 4 == 0 })
 	}
 }
