@@ -1,6 +1,6 @@
 //
 //  Result+.swift
-//
+//  MUCE
 //
 //  Created by kotan.kn on 8/4/R6.
 //
