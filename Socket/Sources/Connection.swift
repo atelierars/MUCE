@@ -6,10 +6,11 @@
 //
 import struct Foundation.Data
 import Network
-import Combine
+@preconcurrency import Combine
 import Async_
+import Synchronization
 import os.log
-public struct Connection {
+public struct Connection: Sendable {
 	@usableFromInline
 	let nw: NWConnection
 	public let state: CurrentValueSubject<NWConnection.State, Never>
@@ -19,7 +20,7 @@ extension Connection {
 	init(nw connection: NWConnection, queue: DispatchQueue) {
 		nw = connection
 		state = .init(connection.state)
-		nw.stateUpdateHandler = state.send
+		nw.stateUpdateHandler = unsafeBitCast(state.send as (NWConnection.State) -> Void, to: (@Sendable (NWConnection.State) -> Void).self)
 		nw.start(queue: queue)
 	}
 }
@@ -31,7 +32,8 @@ extension Connection {
 extension Connection {
 	@discardableResult
 	public func send(message data: Data) -> Future<(), NWError> {
-		.init { promise in
+		.init {
+			let promise = unsafeBitCast($0, to: (@Sendable(Result<(), NWError>) -> Void).self)
 			nw.send(content: data, contentContext: .defaultMessage, completion: .contentProcessed {
 				promise($0.map(Result.failure) ?? .success(()))
 			})
@@ -58,7 +60,8 @@ extension Connection {
 }
 extension Connection {
 	public func recv() -> Future<Data, NWError> {
-		.init { promise in
+		.init {
+			let promise = unsafeBitCast($0, to: (@Sendable(Result<Data, NWError>) -> Void).self)
 			nw.receiveMessage {
 				promise($3.map(Result.failure) ?? .success($0 ?? .init()))
 			}
@@ -66,7 +69,8 @@ extension Connection {
 	}
 	public func recv(count: Int) -> some Publisher<Data, NWError> {
 		let broker = PassthroughSubject<Data, NWError>()
-		var active = true
+		let active = Atomic(true)
+		@Sendable
 		func recv(nw: NWConnection, count: Int) {
 			nw.receive(minimumIncompleteLength: 0, maximumLength: count) {
 				if let error = $3 {
@@ -74,14 +78,14 @@ extension Connection {
 				} else if $2 {
 					broker.send($0 ?? .init())
 					broker.send(completion: .finished)
-				} else if active {
+				} else if active.load(ordering: .acquiring) {
 					broker.send($0 ?? .init())
 					recv(nw: nw, count: count)
 				}
 			}
 		}
 		recv(nw: nw, count: count)
-		return broker.handleEvents(receiveCancel: { active = false })
+		return broker.handleEvents(receiveCancel: { active.store(false, ordering: .releasing) })
 	}
 }
 extension Connection {
@@ -93,7 +97,7 @@ extension Connection {
 		.flatMap { listener in
 			Deferred {
 				let broker = PassthroughSubject<NWConnection, Error>()
-				listener.newConnectionHandler = broker.send
+				listener.newConnectionHandler = unsafeBitCast(broker.send as (NWConnection) -> Void, to: (@Sendable (NWConnection) -> Void).self)
 				defer {
 					listener.start(queue: queue)
 				}
