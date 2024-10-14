@@ -14,7 +14,9 @@ public protocol IPEndpoint<Address>: SocketEndpoint {
 	var port: NWEndpoint.Port { get }
 }
 public typealias IPv4Endpoint = sockaddr_in
-extension IPv4Endpoint: @unchecked Sendable, IPEndpoint  {
+extension sockaddr_in: @retroactive Equatable {}
+extension sockaddr_in6: @retroactive Equatable {}
+extension IPv4Endpoint: @unchecked @retroactive Sendable, IPEndpoint  {
 	public static let family: Int32 = AF_INET
 	@inlinable
 	public init(addr: IPv4Address, port: NWEndpoint.Port) {
@@ -52,13 +54,13 @@ extension IPv4Endpoint: @unchecked Sendable, IPEndpoint  {
 		lhs.sin_addr.s_addr == rhs.sin_addr.s_addr
 	}
 }
-extension IPv4Endpoint: CustomStringConvertible {
+extension IPv4Endpoint: @retroactive CustomStringConvertible {
 	public var description: String {
 		"\(nwEndpoint)"
 	}
 }
 public typealias IPv6Endpoint = sockaddr_in6
-extension IPv6Endpoint: @unchecked Sendable, IPEndpoint {
+extension IPv6Endpoint: @retroactive @unchecked Sendable, IPEndpoint {
 	public static let family: Int32 = AF_INET6
 	@inlinable
 	public init(addr: IPv6Address, port: NWEndpoint.Port) {
@@ -98,7 +100,7 @@ extension IPv6Endpoint: @unchecked Sendable, IPEndpoint {
 		lhs.sin6_scope_id == rhs.sin6_scope_id
 	}
 }
-extension IPv6Endpoint: CustomStringConvertible {
+extension IPv6Endpoint: @retroactive CustomStringConvertible {
 	public var description: String {
 		"\(nwEndpoint)"
 	}
