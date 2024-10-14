@@ -6,14 +6,15 @@
 //
 import protocol Foundation.MutableDataProtocol
 import struct Foundation.Data
-public protocol Argument {
+import Synchronization
+public protocol Argument: Sendable {
 	init?(from osc: inout (tags: Substring, body: some MutableDataProtocol))
 	func encode(into osc: inout (tags: Substring, body: some MutableDataProtocol))
 }
 public typealias Arguments = Array<Argument>
 extension Arguments {
 	@usableFromInline
-	static var Entries: Array<Argument.Type> = [
+	static let Entries: Mutex<Array<Argument.Type>> = .init([
 		// standards
 		Int32.self,
 		Float32.self,
@@ -28,19 +29,23 @@ extension Arguments {
 		Arguments.self,
 		Bool.self,
 		OSC.Nil.self
-	]
+	])
 	@inlinable
 	static func Decode(from osc: inout (tags: Substring, body: some MutableDataProtocol)) -> Optional<Argument> {
-		Entries.reduce(.none) {
-			$0 ?? $1.init(from: &osc)
+		Entries.withLock {
+			$0.reduce(.none) {
+				$0 ?? $1.init(from: &osc)
+			}
 		}
 	}
 	@inlinable
 	public static func Register(type: Argument.Type) {
-		Entries.append(type)
+		Entries.withLock {
+			$0.append(type)
+		}
 	}
 }
-extension Arguments: RawRepresentable {
+extension Arguments: @retroactive RawRepresentable {
 	@inlinable
 	public init?(rawValue data: Data) {
 		let head = data.prefix { $0 != .zero }
