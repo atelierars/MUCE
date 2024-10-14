@@ -5,7 +5,7 @@
 //  Created by kotan.kn on 7/31/24.
 //
 import struct Foundation.Data
-@frozen enum Packet {
+enum Packet {
 	case Message(address: String, arguments: Arguments)
 	case Bundle(at: TimeTag, packets: Array<Packet>)
 }
