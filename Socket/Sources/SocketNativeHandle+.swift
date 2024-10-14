@@ -86,7 +86,6 @@ extension SocketNativeHandle {
 	func recv<Endpoint: SocketEndpoint, T>(count: Int) -> Result<(Array<T>, Endpoint), NWError> {
 		withUnsafeTemporaryAllocation(byteCount: MemoryLayout<Endpoint>.size, alignment: MemoryLayout<Endpoint>.alignment) { memory in
 			var size = socklen_t(memory.count)
-			var data = Data(count: count)
 			let recv = Array<T>(unsafeUninitializedCapacity: count) {
 				$1 = Darwin.recvfrom(self, $0.baseAddress, $0.count * MemoryLayout<T>.stride, 0, memory.assumingMemoryBound(to: sockaddr.self).baseAddress, &size) / MemoryLayout<T>.stride
 			}
@@ -94,7 +93,7 @@ extension SocketNativeHandle {
 			case ..<0:
 				.failure(.posix(.init(rawValue: errno).unsafelyUnwrapped))
 			case let size:
-				.success((recv, memory.load(as: Endpoint.self)))
+				.success((recv, memory[..<size].load(as: Endpoint.self)))
 			}
 		}
 	}
