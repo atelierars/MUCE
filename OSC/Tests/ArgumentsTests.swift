@@ -1,4 +1,4 @@
-import XCTest
+import Testing
 import Foundation
 import CoreMIDI
 extension MIDIMessage_32: Argument {
@@ -14,34 +14,43 @@ extension MIDIMessage_32: Argument {
 	}
 }
 @testable import OSC
-final class ArgumentsTests: XCTestCase {
+@Suite
+struct ArgumentTests {
 	func scenario<T: Argument & Equatable>(raw: T) {
 		var osc = (tags: "" as Substring, body: Data())
 		raw.encode(into: &osc)
-		XCTAssertEqual(T.init(from: &osc), .some(raw))
+		#expect(T.init(from: &osc) == .some(raw))
 	}
-	func testI32() {
-		scenario(raw: Int32.random(in: Int32.min...Int32.max))
+	@Test(arguments: Array<ClosedRange<Int32>>(repeating: Int32.min...Int32.max, count: 16).map(Int32.random(in:)))
+	func testI32(argument value: Int32) {
+		scenario(raw: value)
 	}
-	func testF32() {
-		scenario(raw: Float32.random(in: -1...1))
+	@Test(arguments: Array<ClosedRange<Float32>>(repeating: -1...1, count: 16).map(Float32.random(in:)))
+	func testF32(argument value: Float32) {
+		scenario(raw: value)
 	}
-	func testText() {
+	@Test
+	func text() {
 		scenario(raw: "something")
 	}
-	func testBlob() {
+	@Test
+	func blob() {
 		scenario(raw: Data(Array(repeating: (), count: .random(in: 32...64)).map { UInt8.random(in: UInt8.min...UInt8.max) }))
 	}
-	func testI64() {
-		scenario(raw: Int64.random(in: Int64.min...Int64.max))
+	@Test(arguments: Array<ClosedRange<Int64>>(repeating: Int64.min...Int64.max, count: 16).map(Int64.random(in:)))
+	func i64(val: Int64) {
+		scenario(raw: val)
 	}
-	func testF64() {
-		scenario(raw: Float64.random(in: -1...1))
+	@Test(arguments: Array<ClosedRange<Float64>>(repeating: -1...1, count: 16).map(Float64.random(in:)))
+	func f64(val: Float64) {
+		scenario(raw: val)
 	}
-	func testChar() {
+	@Test
+	func char() {
 		scenario(raw: "" as Character)
 	}
-	func testArgs() {
+	@Test
+	func args() {
 		var osc = (tags: "" as Substring, body: Data())
 		let raw = [
 			Bool.random(),
@@ -54,34 +63,36 @@ final class ArgumentsTests: XCTestCase {
 		] as Arguments
 		raw.encode(into: &osc)
 		guard let dec = Arguments(from: &osc) else {
-			XCTFail()
+			Issue.record()
 			return
 		}
 		zip(raw, dec).forEach {
 			switch ($0, $1) {
 			case let (x, y) as (Int32, Int32):
-				XCTAssertEqual(x, y)
+				#expect(x == y)
 			case let (x, y) as (Float32, Float32):
-				XCTAssertEqual(x, y)
+				#expect(x == y)
 			case let (x, y) as (Int64, Int64):
-				XCTAssertEqual(x, y)
+				#expect(x == y)
 			case let (x, y) as (Float64, Float64):
-				XCTAssertEqual(x, y)
+				#expect(x == y)
 			case let (x, y) as (Bool, Bool):
-				XCTAssertEqual(x, y)
+				#expect(x == y)
 			case let (x, y) as (String, String):
-				XCTAssertEqual(x, y)
+				#expect(x == y)
 			case let (x, y) as (Data, Data):
-				XCTAssertEqual(x, y)
+				#expect(x == y)
 			default:
-				XCTFail("\($0) vs \($1)")
+				Issue.record("\($0) vs \($1)")
 			}
 		}
 	}
-	func testBool() {
-		scenario(raw: Bool.random())
+	@Test(arguments: [false, true])
+	func bool(val: Bool) {
+		scenario(raw: val)
 	}
-	func testRawData() {
+	@Test
+	func data() {
 		let raw = [
 			"",
 			Int32.random(in: Int32.min...Int32.max),
@@ -96,38 +107,39 @@ final class ArgumentsTests: XCTestCase {
 		] as Arguments
 		let enc = raw.rawValue
 		guard let dec = Arguments(rawValue: enc) else {
-			XCTFail()
+			Issue.record()
 			return
 		}
 		zip(raw, dec).forEach {
 			switch ($0, $1) {
 			case let (x, y) as (Int32, Int32):
-				XCTAssertEqual(x, y)
+				#expect(x == y)
 			case let (x, y) as (Float32, Float32):
-				XCTAssertEqual(x, y)
+				#expect(x == y)
 			case let (x, y) as (Int64, Int64):
-				XCTAssertEqual(x, y)
+				#expect(x == y)
 			case let (x, y) as (Float64, Float64):
-				XCTAssertEqual(x, y)
+				#expect(x == y)
 			case let (x, y) as (Bool, Bool):
-				XCTAssertEqual(x, y)
+				#expect(x == y)
 			case let (x, y) as (String, String):
-				XCTAssertEqual(x, y)
+				#expect(x == y)
 			default:
-				XCTFail("\($0) vs \($1)")
+				Issue.record("\($0) vs \($1)")
 			}
 		}
 	}
-	func testCustomArgType() {
+	@Test
+	func midi() {
 		Arguments.Register(type: MIDIMessage_32.self)
 		let raw = [
 			MIDIMessage_32(bigEndian: 0x01020304)
 		] as Arguments
 		let enc = raw.rawValue
-		guard let dec = Arguments(rawValue: enc) else {
-			XCTFail()
+		guard let dec = Arguments(rawValue: enc), let lhs = raw.first as?MIDIMessage_32, let rhs = dec.first as?MIDIMessage_32 else {
+			Issue.record()
 			return
 		}
-		XCTAssertEqual(dec.first as?MIDIMessage_32, raw.first as?MIDIMessage_32)
+		#expect(lhs == rhs)
 	}
 }
