@@ -10,6 +10,8 @@ import typealias CoreMedia.CMTimeScale
 import CoreMedia
 import RationalNumbers
 import func Integer_.gcd
+import func Integer_.abs
+import func Integer_.mod
 extension CMTime {
 	@inlinable
 	public init(duration: Duration) {
@@ -45,23 +47,30 @@ extension CMTime {
 	}
 }
 public func CMTimeDivApprox(_ lhs: CMTime, _ rhs: CMTime) -> CMTime {
-	// Use UInt128 in Swift 6
-	let timescale = max(lhs.timescale, rhs.timescale)
-	let lhs = lhs.convertScale(timescale, method: .roundTowardNegativeInfinity)
-	let rhs = rhs.convertScale(timescale, method: .roundTowardNegativeInfinity)
-	let v = lhs.value * .init(rhs.timescale)
-	let s = rhs.value * .init(lhs.timescale)
-	let g = CMTimeValue(gcd(v, s).magnitude)
-	return.init(value: v / g, timescale: .init(s / g)).simplified
+	assert(CMTimeValue.self == Int64.self)
+	assert(CMTimeScale.self == Int32.self)
+	let s = Int128(lhs.timescale) * Int128(rhs.value)
+	let v = Int128(lhs.value) * Int128(rhs.timescale)
+	let f = Integer_.abs(Integer_.gcd(v, s))
+	let value = v / f
+	let scale = s / f
+	let ratio = max(1, (scale)/(1<<31-1))
+	return.init(.init(value / ratio), .init(scale / ratio)).simplified
 }
 public func CMTimeModApprox(_ lhs: CMTime, _ rhs: CMTime) -> CMTime {
-	// Use UInt128 in Swift 6
-	let timescale = max(lhs.timescale, rhs.timescale)
-	let lhs = lhs.convertScale(timescale, method: .roundTowardNegativeInfinity)
-	let rhs = rhs.convertScale(timescale, method: .roundTowardNegativeInfinity)
-	return.init(value: lhs.value % rhs.value, timescale: timescale).simplified
+	assert(CMTimeValue.self == Int64.self)
+	assert(CMTimeScale.self == Int32.self)
+	let l = Int128(lhs.value) * Int128(rhs.timescale)
+	let r = Int128(rhs.value) * Int128(lhs.timescale)
+	let s = Int128(rhs.timescale) * Int128(lhs.timescale)
+	let v = Integer_.mod(l, r)
+	let f = Integer_.abs(Integer_.gcd(v, s))
+	let value = v / f
+	let scale = s / f
+	let ratio = max(1, (scale)/(1<<31-1))
+	return.init(.init(value / ratio), .init(scale / ratio)).simplified
 }
-extension CMTime: RationalNumber {
+extension CMTime: @retroactive RationalNumber {
 	public typealias IntegerLiteralType = CMTimeValue
 	public var magnitude: CMTime {
 		CMTimeAbsoluteValue(self)
