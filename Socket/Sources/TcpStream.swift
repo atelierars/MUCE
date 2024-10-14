@@ -14,12 +14,12 @@ public struct TcpStream<Endpoint: IPEndpoint>: @unchecked Sendable {
 	@usableFromInline
 	let handle: TcpSocket<Endpoint>
 	@usableFromInline
-	let vendor: Deferred<Publishers.HandleEvents<PassthroughSubject<Data, NWError>>>
+	let broker: Deferred<Publishers.HandleEvents<PassthroughSubject<Data, NWError>>>
 }
 extension TcpStream {
 	fileprivate init(connected socket: TcpSocket<Endpoint>, on queue: Optional<DispatchQueue>) {
 		handle = socket
-		vendor = Deferred {
+		broker = Deferred {
 			let broker = PassthroughSubject<Data, NWError>()
 			let source = DispatchSource.makeReadSource(fileDescriptor: socket.handle, queue: queue)
 			source.setEventHandler {
@@ -41,13 +41,15 @@ extension TcpStream {
 }
 extension TcpStream {
 	public static func Connect(to endpoint: Endpoint, on queue: Optional<DispatchQueue> = .none, timeout: Duration = .seconds(3)) -> Future<TcpStream, NWError> {
-		.init { promise in
+		.init {
+			let promise = unsafeBitCast($0, to: (@Sendable (Result<TcpStream<Endpoint>, NWError>) -> Void).self)
 			(queue ?? .global()).async {
 				promise(TcpSocket<Endpoint>.new
 					.flatMap { socket in socket.set(timeoutRecv: timeout).map { socket } }
 					.flatMap { socket in socket.set(timeoutSend: timeout).map { socket } }
 					.flatMap { socket in socket.connect(to: endpoint).map { socket } }
-					.map { .init(connected: $0, on: queue)})
+					.map { .init(connected: $0, on: queue)}
+				)
 			}
 		}
 	}
@@ -138,7 +140,7 @@ extension TcpStream: Publisher {
 	public typealias Output = Data
 	public typealias Failure = NWError
 	public func receive(subscriber: some Subscriber<Output, Failure>) {
-		vendor.receive(subscriber: subscriber)
+		broker.receive(subscriber: subscriber)
 	}
 }
 extension TcpStream: Identifiable {
