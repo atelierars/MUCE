@@ -1,14 +1,14 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 6.0
 // Open Sound Control 1.0
 // Reference: https://opensoundcontrol.stanford.edu/spec-1_0.html
 import PackageDescription
 let package = Package(
 	name: "MUCE",
 	platforms: [
-		.iOS(.v17),
-		.tvOS(.v17),
-		.macOS(.v14),
-		.macCatalyst(.v17)
+		.macOS(.v15),
+		.macCatalyst(.v18),
+		.iOS(.v18),
+		.tvOS(.v18)
 	],
 	products: [
 		.library(
@@ -45,7 +45,6 @@ let package = Package(
 			name: "Chrono",
 			dependencies: [
 				.target(name: "Socket"),
-				.target(name: "CMTime+"),
 				.product(name: "RationalNumbers", package: "MUSE")
 			],
 			path: "Chrono/Sources"
