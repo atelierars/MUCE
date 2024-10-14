@@ -42,13 +42,13 @@ extension Ticker {
 	}
 }
 extension Ticker {
-	@inlinable
+//	@inlinable
 	public func timer(for period: CMTime, on queue: Optional<DispatchQueue> = .none) -> some Publisher<CMTime, Error> {
 		let broker = PassthroughSubject<CMTime, Error>()
 		let source = DispatchSource.makeTimerSource(flags: .strict, queue: queue)
 		let cancel = vendor.sink { moment in
 			do {
-				let elapse = moment.floor(divisor: period)
+				let elapse = moment.quantise(by: period, rounding: .negative)
 				try handle.addTimer(source)
 				try handle.setTimerNextFireTime(source, fireTime: elapse + period)
 			} catch {
@@ -58,7 +58,7 @@ extension Ticker {
 		source.setRegistrationHandler {
 			do {
 				let moment = handle.time
-				let elapse = moment.floor(divisor: period)
+				let elapse = moment.quantise(by: period, rounding: .negative)
 				try handle.addTimer(source)
 				try handle.setTimerNextFireTime(source, fireTime: elapse + period)
 			} catch {
@@ -68,7 +68,7 @@ extension Ticker {
 		source.setEventHandler {
 			do {
 				let moment = handle.time
-				let elapse = moment.floor(divisor: period)
+				let elapse = moment.quantise(by: period, rounding: .negative)
 				try handle.addTimer(source)
 				try handle.setTimerNextFireTime(source, fireTime: elapse + period)
 				broker.send(elapse)
