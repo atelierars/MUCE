@@ -7,11 +7,11 @@
 @_exported import struct CoreMedia.CMTime
 import typealias CoreMedia.CMTimeValue
 import typealias CoreMedia.CMTimeScale
-import CoreMedia
+import struct CoreMedia.CMTime
+import func CoreMedia.CMTimeMultiply
+import func CoreMedia.CMTimeAbsoluteValue
 import RationalNumbers
 import func Integer_.gcd
-import func Integer_.abs
-import func Integer_.mod
 extension CMTime {
 	@inlinable
 	public init(duration: Duration) {
@@ -32,10 +32,30 @@ extension Duration {
 	}
 }
 extension CMTime {
-	@inline(__always)
 	@inlinable
-	func floor(divisor: CMTime) -> CMTime {
-		self - CMTimeModApprox(CMTimeModApprox(self, divisor) + divisor, divisor)
+	@inline(__always)
+	func quantise(by period: CMTime, rounding toward: RoundingToward = .zero) -> CMTime {
+		let n = Int128(value) * Int128(period.timescale)
+		let d = Int128(timescale) * Int128(period.value)
+		switch toward {
+		case.nearest:
+			let r = n % d + d / 2 + d
+			let p = n - r % d + d / 2
+			return CMTimeMultiply(period, multiplier: .init(p / d))
+		case.infinite:
+			let r = n % d
+			let q = n - ( d + r ) % d
+			let p = n + ( d - r ) % d
+			return CMTimeMultiply(period, multiplier: .init(p / d + q / d - n / d))
+		case.negative:
+			let q = n - ( n % d + d ) % d
+			return CMTimeMultiply(period, multiplier: .init(q / d))
+		case.positive:
+			let p = n + ( d - n % d ) % d
+			return CMTimeMultiply(period, multiplier: .init(p / d))
+		case.zero:
+			return CMTimeMultiply(period, multiplier: .init(n / d))
+		}
 	}
 }
 extension CMTime {
@@ -49,26 +69,26 @@ extension CMTime {
 public func CMTimeDivApprox(_ lhs: CMTime, _ rhs: CMTime) -> CMTime {
 	assert(CMTimeValue.self == Int64.self)
 	assert(CMTimeScale.self == Int32.self)
-	let s = Int128(lhs.timescale) * Int128(rhs.value)
-	let v = Int128(lhs.value) * Int128(rhs.timescale)
-	let f = Integer_.abs(Integer_.gcd(v, s))
-	let value = v / f
-	let scale = s / f
-	let ratio = max(1, (scale)/(1<<31-1))
-	return.init(.init(value / ratio), .init(scale / ratio)).simplified
+	let n = Int128(lhs.value) * Int128(rhs.timescale)
+	let d = Int128(lhs.timescale) * Int128(rhs.value)
+	let f = gcd(n, d)
+	let value = n / f
+	let scale = d / f
+	let ratio = max(1, (scale)/(1<<30))
+	return.init(value: .init(value / ratio), timescale: .init(scale / ratio))
 }
 public func CMTimeModApprox(_ lhs: CMTime, _ rhs: CMTime) -> CMTime {
 	assert(CMTimeValue.self == Int64.self)
 	assert(CMTimeScale.self == Int32.self)
 	let l = Int128(lhs.value) * Int128(rhs.timescale)
-	let r = Int128(rhs.value) * Int128(lhs.timescale)
-	let s = Int128(rhs.timescale) * Int128(lhs.timescale)
-	let v = Integer_.mod(l, r)
-	let f = Integer_.abs(Integer_.gcd(v, s))
-	let value = v / f
-	let scale = s / f
-	let ratio = max(1, (scale)/(1<<31-1))
-	return.init(.init(value / ratio), .init(scale / ratio)).simplified
+	let r = Int128(lhs.timescale) * Int128(rhs.value)
+	let n = l % r
+	let d = Int128(lhs.timescale) * Int128(rhs.timescale)
+	let f = gcd(n, d)
+	let value = n / f
+	let scale = d / f
+	let ratio = max(1, (scale)/(1<<30))
+	return.init(value: .init(value / ratio), timescale: .init(scale / ratio))
 }
 extension CMTime: @retroactive RationalNumber {
 	public typealias IntegerLiteralType = CMTimeValue
