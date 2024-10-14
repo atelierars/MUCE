@@ -1,37 +1,46 @@
-import XCTest
+import Testing
+import struct Foundation.Data
+import struct Foundation.Date
 @testable import OSC
-final class PacketTests: XCTestCase {
-	func testMessageEmpty() {
+@Suite
+struct PacketTests {
+	@Test
+	func empty() {
 		let raw = Packet.Message(address: "/test", arguments: [])
 		let enc = raw.rawValue
 		let dec = Packet(rawValue: enc)
-		XCTAssertEqual(dec, .some(raw))
+		#expect(dec == .some(raw))
 	}
-	func testMessageArg1() {
+	@Test
+	func arg1() {
 		let raw = Packet.Message(address: "/test", arguments: [1])
 		let enc = raw.rawValue
 		let dec = Packet(rawValue: enc)
-		XCTAssertEqual(dec, .some(raw))
+		#expect(dec == .some(raw))
 	}
-	func testMessageArg2() {
+	@Test
+	func arg2() {
 		let raw = Packet.Message(address: "/test", arguments: [1, 2.0])
 		let enc = raw.rawValue
 		let dec = Packet(rawValue: enc)
-		XCTAssertEqual(dec, .some(raw))
+		#expect(dec == .some(raw))
 	}
-	func testMessageArg3() {
+	@Test
+	func arg3() {
 		let raw = Packet.Message(address: "/test", arguments: [1, [2.0], "3"])
 		let enc = raw.rawValue
 		let dec = Packet(rawValue: enc)
-		XCTAssertEqual(dec, .some(raw))
+		#expect(dec == .some(raw))
 	}
-	func testMessage4() {
+	@Test
+	func arg4() {
 		let raw = Packet.Message(address: "/test", arguments: [1, [2.0, ["3"]], 4])
 		let enc = raw.rawValue
 		let dec = Packet(rawValue: enc)
-		XCTAssertEqual(dec, .some(raw))
+		#expect(dec == .some(raw))
 	}
-	func testBundle() {
+	@Test
+	func bundle() {
 		let raw = Packet.Bundle(at: .init(date: Date.now), packets: [
 			.Message(address: "/root/1", arguments: [1, 2.0, "3"]),
 			.Bundle(at: .immediately, packets: [
@@ -53,6 +62,6 @@ final class PacketTests: XCTestCase {
 		])
 		let enc = raw.rawValue
 		let dec = Packet(rawValue: enc)
-		XCTAssertEqual(dec, .some(raw))
+		#expect(dec == .some(raw))
 	}
 }
