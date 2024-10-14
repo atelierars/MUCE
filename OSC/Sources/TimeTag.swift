@@ -9,7 +9,7 @@ import typealias Foundation.TimeInterval
 import struct CoreMedia.CMTime
 import func Darwin.modf
 import func Integer_.gcd
-@frozen public struct TimeTag {
+@frozen public struct TimeTag: Sendable {
 	@usableFromInline
 	typealias RawValue = UInt64
 	@usableFromInline
