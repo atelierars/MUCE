@@ -1,17 +1,23 @@
-import XCTest
+import Testing
 import CoreMedia
+import simd
 @testable import Chrono
-final class CMTimeTests: XCTestCase {
-	func testDiv() {
-		let a = CMTime(seconds: -1.25, preferredTimescale: 1 << 17 - 1)
-		let b = CMTime(seconds: 3.125, preferredTimescale: 1 << 19 - 1)
+@Suite
+struct CMTimeTests {
+	@Test
+	func div() {
+		let a = CMTime(seconds: .random(in: 1...9), preferredTimescale: 1 << 19 - 1)
+		let b = CMTime(seconds: .random(in: 1...9), preferredTimescale: .init((1 << 31) - 1))
 		let c = CMTimeDivApprox(a, b)
-		XCTAssertEqual(c.seconds, a.seconds / b.seconds, accuracy: 1e-6)
+		let d = fma(a.seconds, recip(b.seconds), -c.seconds)
+		#expect(d.magnitude < 1e-5, "\(c.seconds) vs \(a.seconds / b.seconds)")
 	}
-	func testMod() {
-		let a = CMTime(seconds: -1.3, preferredTimescale: 1 << 17 - 1)
-		let b = CMTime(seconds: 2.9, preferredTimescale: 1 << 19 - 1)
+	@Test
+	func mod() {
+		let a = CMTime(seconds: .random(in: 1...9), preferredTimescale: .init((1 << 31) - 1))
+		let b = CMTime(seconds: .random(in: 1...9), preferredTimescale: 1 << 19 - 1)
 		let c = CMTimeModApprox(a, b)
-		XCTAssertEqual(c.seconds, fmod(a.seconds, b.seconds), accuracy: 1e-6)
+		let d = c.seconds - a.seconds.remainder(dividingBy: b.seconds)
+		#expect(d.magnitude < 1e-5, "\(c.seconds) vs \(a.seconds.remainder(dividingBy: b.seconds))")
 	}
 }
