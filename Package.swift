@@ -37,7 +37,7 @@ let package = Package(
 			dependencies: [
 //                .target(name: "Nearby"),
 				.target(name: "Socket"),
-				.product(name: "RationalNumbers", package: "MUSE")
+				.product(name: "Foundations", package: "MUSE")
 			],
 			path: "OSC/Sources"
 		),
@@ -45,7 +45,7 @@ let package = Package(
 			name: "Chrono",
 			dependencies: [
 				.target(name: "Socket"),
-				.product(name: "RationalNumbers", package: "MUSE")
+				.product(name: "Foundations", package: "MUSE")
 			],
 			path: "Chrono/Sources"
 		),
