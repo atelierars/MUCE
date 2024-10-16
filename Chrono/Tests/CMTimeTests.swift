@@ -4,20 +4,28 @@ import simd
 @testable import Chrono
 @Suite
 struct CMTimeTests {
-	@Test
-	func div() {
-		let a = CMTime(seconds: .random(in: 1...9), preferredTimescale: 1 << 19 - 1)
-		let b = CMTime(seconds: .random(in: 1...9), preferredTimescale: .init((1 << 31) - 1))
+	@Test(arguments: [
+		(.random(in: -9...9), .random(in: 1...9)),
+		(.random(in: -9...9), .random(in: 1...9)),
+		(.random(in: -9...9), .random(in: 1...9)),
+	] as Array<(Float64, Float64)>)
+	func div(lhs: Float64, rhs: Float64) {
+		let a = CMTime(seconds: lhs, preferredTimescale: 1 << 19 - 1)
+		let b = CMTime(seconds: rhs, preferredTimescale: .init((1 << 31) - 1))
 		let c = CMTimeDivApprox(a, b)
-		#expect(fma(a.seconds, recip(b.seconds), -c.seconds).magnitude < 1e-5, "\(c.seconds) vs \(a.seconds / b.seconds)")
+		#expect(fma(a.seconds, recip(b.seconds), -c.seconds).magnitude < 1e-6, "\(c.seconds) vs \(a.seconds / b.seconds)")
 	}
-	@Test
-	func mod() {
-		let a = CMTime(seconds: .random(in: 1...9), preferredTimescale: .init((1 << 31) - 1))
-		let b = CMTime(seconds: .random(in: 1...9), preferredTimescale: 1 << 19 - 1)
+	@Test(arguments: [
+		(.random(in: -9...9), .random(in: 1...9)),
+		(.random(in: -9...9), .random(in: 1...9)),
+		(.random(in: -9...9), .random(in: 1...9)),
+	] as Array<(Float64, Float64)>)
+	func mod(lhs: Float64, rhs: Float64) {
+		let a = CMTime(seconds: lhs, preferredTimescale: .init((1 << 31) - 1))
+		let b = CMTime(seconds: rhs, preferredTimescale: 1 << 19 - 1)
 		let c = CMTimeModApprox(a, b)
 		let d = a.seconds.truncatingRemainder(dividingBy: b.seconds)
-		#expect((c.seconds - d).magnitude < 1e-5, "\(c.seconds) vs \(a.seconds.truncatingRemainder(dividingBy: b.seconds)) of \(a.seconds), \(b.seconds)")
+		#expect((c.seconds - d).magnitude < 1e-6, "\(c.seconds) vs \(a.seconds.truncatingRemainder(dividingBy: b.seconds)) of \(a.seconds), \(b.seconds)")
 	}
 	@Test(arguments: [
 		(CMTime(value: 17, timescale: 8), ( 2.5, 2.5, 2.0, 2.0, 2.0)), // 2.25 -> ( 2.5, 2.0, 2.0, 2.0)
