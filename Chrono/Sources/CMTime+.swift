@@ -92,7 +92,7 @@ public func CMTimeModApprox(_ lhs: CMTime, _ rhs: CMTime) -> CMTime {
 	let ratio = 1 + (scale-1)/(1<<31)
 	return.init(value: .init(value / ratio), timescale: .init(scale / ratio))
 }
-extension CMTime: @retroactive RationalNumber {
+extension CMTime: @retroactive RationalNumber, @unchecked Sendable {
 	public typealias IntegerLiteralType = CMTimeValue
 	public var magnitude: CMTime {
 		CMTimeAbsoluteValue(self)
