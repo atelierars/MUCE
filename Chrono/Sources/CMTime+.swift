@@ -71,10 +71,11 @@ public func CMTimeDivApprox(_ lhs: CMTime, _ rhs: CMTime) -> CMTime {
 	assert(CMTimeScale.self == Int32.self)
 	let n = Int128(lhs.value) * Int128(rhs.timescale)
 	let d = Int128(lhs.timescale) * Int128(rhs.value)
-	let f = gcd(n, d)
+	let f = abs(gcd(n, d))
 	let value = n / f
 	let scale = d / f
-	let ratio = max(1, (scale)/(1<<30))
+	assert(0 < scale)
+	let ratio = 1 + (scale-1)/(1<<31)
 	return.init(value: .init(value / ratio), timescale: .init(scale / ratio))
 }
 public func CMTimeModApprox(_ lhs: CMTime, _ rhs: CMTime) -> CMTime {
@@ -84,10 +85,11 @@ public func CMTimeModApprox(_ lhs: CMTime, _ rhs: CMTime) -> CMTime {
 	let r = Int128(lhs.timescale) * Int128(rhs.value)
 	let n = l % r
 	let d = Int128(lhs.timescale) * Int128(rhs.timescale)
-	let f = gcd(n, d)
+	let f = abs(gcd(n, d))
 	let value = n / f
 	let scale = d / f
-	let ratio = max(1, (scale)/(1<<30))
+	assert(0 < scale)
+	let ratio = 1 + (scale-1)/(1<<31)
 	return.init(value: .init(value / ratio), timescale: .init(scale / ratio))
 }
 extension CMTime: @retroactive RationalNumber {
