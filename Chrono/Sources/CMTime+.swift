@@ -34,7 +34,7 @@ extension Duration {
 extension CMTime {
 	@inlinable
 	@inline(__always)
-	func quantise(by period: CMTime, rounding toward: RoundingToward = .zero) -> CMTime {
+	public func quantise(by period: CMTime, rounding toward: RoundingToward = .zero) -> CMTime {
 		let n = Int128(value) * Int128(period.timescale)
 		let d = Int128(timescale) * Int128(period.value)
 		switch toward {
