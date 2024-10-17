@@ -10,8 +10,11 @@ import typealias CoreMedia.CMTimeScale
 import struct CoreMedia.CMTime
 import func CoreMedia.CMTimeMultiply
 import func CoreMedia.CMTimeAbsoluteValue
-import RationalNumbers
 import func Integer_.gcd
+import func Integer_.mod
+import func Integer_.abs
+import func Integer_.div
+import RationalNumbers
 extension CMTime {
 	@inlinable
 	public init(duration: Duration) {
@@ -39,22 +42,22 @@ extension CMTime {
 		let d = Int128(timescale) * Int128(period.value)
 		switch toward {
 		case.nearest:
-			let r = n % d + d / 2 + d
-			let p = n - r % d + d / 2
-			return CMTimeMultiply(period, multiplier: .init(p / d))
+			let r = mod(n, d) + d / 2 + d
+			let p = n - mod(r, d) + d / 2
+			return CMTimeMultiply(period, multiplier: .init(div(p, d)))
 		case.infinite:
-			let r = n % d
-			let q = n - ( d + r ) % d
-			let p = n + ( d - r ) % d
-			return CMTimeMultiply(period, multiplier: .init(p / d + q / d - n / d))
+			let r = mod(n, d)
+			let q = n - mod(d + r, d)
+			let p = n + mod(d - r, d)
+			return CMTimeMultiply(period, multiplier: .init(div(p, d) + div(q, d) - div(n, d)))
 		case.negative:
-			let q = n - ( n % d + d ) % d
-			return CMTimeMultiply(period, multiplier: .init(q / d))
+			let q = n - mod(mod(n, d) + d, d)
+			return CMTimeMultiply(period, multiplier: .init(div(q, d)))
 		case.positive:
-			let p = n + ( d - n % d ) % d
-			return CMTimeMultiply(period, multiplier: .init(p / d))
+			let p = n + mod(d - mod(n, d), d)
+			return CMTimeMultiply(period, multiplier: .init(div(p, d)))
 		case.zero:
-			return CMTimeMultiply(period, multiplier: .init(n / d))
+			return CMTimeMultiply(period, multiplier: .init(div(n, d)))
 		}
 	}
 }
