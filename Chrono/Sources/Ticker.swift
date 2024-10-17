@@ -8,6 +8,7 @@ import protocol Combine.Publisher
 import class Combine.PassthroughSubject
 import class Combine.CurrentValueSubject
 import class Combine.AnyCancellable
+import struct Combine.Deferred
 import protocol CoreMedia.CMSyncProtocol
 import class CoreMedia.CMClock
 import class CoreMedia.CMTimebase
@@ -42,7 +43,11 @@ extension Ticker {
 	}
 }
 extension Ticker {
-//	@inlinable
+	public func timerReusable(for period: CMTime, on queue: Optional<DispatchQueue> = .none) -> some Publisher<CMTime, Error> {
+		Deferred {
+			timer(for: period, on: queue)
+		}
+	}
 	public func timer(for period: CMTime, on queue: Optional<DispatchQueue> = .none) -> some Publisher<CMTime, Error> {
 		let broker = PassthroughSubject<CMTime, Error>()
 		let source = DispatchSource.makeTimerSource(flags: .strict, queue: queue)
