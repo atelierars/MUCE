@@ -28,4 +28,14 @@ struct TimerTests {
 		try ticker.set(time: .init(seconds: 100, preferredTimescale: 1))
 		#expect((tocker.time.seconds - 420).magnitude < 1e-3)
 	}
+	@Test(TimeLimitTrait.timeLimit(.minutes(1)))
+	func delay() async throws {
+		let ticker = try Ticker()
+		try ticker.set(rate: 1)
+		let now = ticker.time
+		let after = ticker.delay(after: CMTime(duration: .seconds(3)))
+		for try await delay in after.values {
+			#expect(ticker.time - now > 3)
+		}
+	}
 }
