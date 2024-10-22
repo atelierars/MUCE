@@ -8,6 +8,7 @@
 import typealias CoreMedia.CMTimeValue
 import typealias CoreMedia.CMTimeScale
 import struct CoreMedia.CMTime
+import enum CoreMedia.CMTimeRoundingMethod
 import func CoreMedia.CMTimeMultiply
 import func CoreMedia.CMTimeAbsoluteValue
 import func Integer_.gcd
@@ -59,6 +60,11 @@ extension CMTime {
 		case.zero:
 			return CMTimeMultiply(period, multiplier: .init(div(n, d)))
 		}
+	}
+	@inlinable
+	@inline(__always)
+	public func convertScale(_ newTimescale: Self, method: CMTimeRoundingMethod) -> Self {
+		CMTimeMultiply(self, multiplier: newTimescale.timescale).convertScale(CMTimeScale(newTimescale.value), method: method)
 	}
 }
 extension CMTime {
