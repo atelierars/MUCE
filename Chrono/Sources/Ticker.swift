@@ -7,6 +7,7 @@
 import protocol Combine.Publisher
 import class Combine.PassthroughSubject
 import class Combine.CurrentValueSubject
+import class Combine.Future
 import class Combine.AnyCancellable
 import struct Combine.Deferred
 import protocol CoreMedia.CMSyncProtocol
@@ -40,6 +41,31 @@ extension Ticker {
 		handle = try.init(sourceTimebase: ticker.handle)
 		vendor = .init()
 		cancel = .some(ticker.vendor.map(handle.convert(reference:)).sink(receiveValue: vendor.send))
+	}
+}
+extension Ticker {
+	public func delay(after latency: CMTime, on queue: Optional<DispatchQueue> = .none) -> some Publisher<CMTime, Error> {
+		let source = DispatchSource.makeTimerSource(flags: .strict, queue: queue)
+		return Future { promise in
+			do {
+				source.setEventHandler {
+					let moment = handle.time
+					let elapse = moment.quantise(by: latency, rounding: .negative)
+					promise(.success(elapse))
+				}
+				source.resume()
+				let moment = handle.time
+				let elapse = moment.quantise(by: latency, rounding: .negative)
+				try handle.addTimer(source)
+				try handle.setTimerNextFireTime(source, fireTime: elapse + latency)
+			} catch {
+				promise(.failure(error))
+			}
+		}.handleEvents(receiveCompletion: { _ in
+			try?handle.removeTimer(source)
+		}, receiveCancel: {
+			try?handle.removeTimer(source)
+		})
 	}
 }
 extension Ticker {
