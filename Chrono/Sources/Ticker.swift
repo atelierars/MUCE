@@ -49,15 +49,15 @@ extension Ticker {
 		return Future { promise in
 			do {
 				source.setEventHandler {
-					let moment = CMTimeAdd(handle.time, latency)
-					let elapse = quantise.isNormal ? moment.quantise(by: quantise, rounding: .positive) : latency
+					let moment = handle.time
+					let elapse = quantise.isNormal ? moment.quantise(by: quantise, rounding: .positive) : moment
 					promise(.success(elapse))
 				}
 				source.resume()
 				let moment = CMTimeAdd(handle.time, latency)
-				let elapse = quantise.isNormal ? moment.quantise(by: quantise, rounding: .positive) : latency
+				let elapse = quantise.isNormal ? moment.quantise(by: quantise, rounding: .positive) : moment
 				try handle.addTimer(source)
-				try handle.setTimerNextFireTime(source, fireTime: elapse + latency)
+				try handle.setTimerNextFireTime(source, fireTime: elapse)
 			} catch {
 				promise(.failure(error))
 			}
