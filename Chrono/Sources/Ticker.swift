@@ -44,18 +44,18 @@ extension Ticker {
 	}
 }
 extension Ticker {
-	public func delay(after latency: CMTime, on queue: Optional<DispatchQueue> = .none) -> some Publisher<CMTime, Error> {
+	public func delay(after latency: CMTime, quantise: CMTime = .invalid, on queue: Optional<DispatchQueue> = .none) -> some Publisher<CMTime, Error> {
 		let source = DispatchSource.makeTimerSource(flags: .strict, queue: queue)
 		return Future { promise in
 			do {
 				source.setEventHandler {
-					let moment = handle.time
-					let elapse = moment.quantise(by: latency, rounding: .negative)
+					let moment = CMTimeAdd(handle.time, latency)
+					let elapse = quantise.isNormal ? moment.quantise(by: quantise, rounding: .positive) : latency
 					promise(.success(elapse))
 				}
 				source.resume()
-				let moment = handle.time
-				let elapse = moment.quantise(by: latency, rounding: .negative)
+				let moment = CMTimeAdd(handle.time, latency)
+				let elapse = quantise.isNormal ? moment.quantise(by: quantise, rounding: .positive) : latency
 				try handle.addTimer(source)
 				try handle.setTimerNextFireTime(source, fireTime: elapse + latency)
 			} catch {
