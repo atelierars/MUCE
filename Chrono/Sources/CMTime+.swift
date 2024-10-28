@@ -68,6 +68,22 @@ extension CMTime {
 	}
 }
 extension CMTime {
+	func times(of amount: CMTime) -> (count: Int, remainder: CMTime) {
+		assert([Int.bitWidth, CMTimeValue.bitWidth, CMTimeScale.bitWidth].allSatisfy{$0<=Int128.bitWidth})
+		if amount.isIndefinite {
+			return (0, self)
+		} else if isNumeric, amount.isNumeric {
+			let n = Int128(value) * Int128(amount.timescale)
+			let d = Int128(timescale) * Int128(amount.value)
+			let (q, r) = n.quotientAndRemainder(dividingBy: d)
+			let g = gcd(r, d)
+			return (Int(q), .init(value: .init(r/g), timescale: .init(d/g)))
+		} else {
+			return (0, .invalid)
+		}
+	}
+}
+extension CMTime {
 	@inline(__always)
 	@inlinable
 	var simplified: CMTime {
