@@ -68,7 +68,9 @@ extension CMTime {
 	}
 }
 extension CMTime {
-	func times(of amount: CMTime) -> (count: Int, remainder: CMTime) {
+	@inlinable
+	@inline(__always)
+	public func times(of amount: CMTime) -> (count: Int, remainder: CMTime) {
 		assert([Int.bitWidth, CMTimeValue.bitWidth, CMTimeScale.bitWidth].allSatisfy{$0<=Int128.bitWidth})
 		if amount.isIndefinite {
 			return (0, self)
