@@ -16,6 +16,19 @@ struct CMTimeTests {
 		#expect(fma(a.seconds, recip(b.seconds), -c.seconds).magnitude < 1e-6, "\(c.seconds) vs \(a.seconds / b.seconds)")
 	}
 	@Test(arguments: [
+		(CMTime(value: 5, timescale: 8), CMTime(value: 1, timescale: 4), ( 2, CMTime.zero), CMTimeRoundingMethod.roundTowardNegativeInfinity),
+		(CMTime(value:-5, timescale: 8), CMTime(value: 1, timescale: 4), (-3, CMTime.zero), CMTimeRoundingMethod.roundTowardNegativeInfinity),
+		(CMTime(value: 5, timescale: 8), CMTime(value: 1, timescale: 4), ( 3, CMTime.zero), CMTimeRoundingMethod.roundTowardPositiveInfinity),
+		(CMTime(value:-5, timescale: 8), CMTime(value: 1, timescale: 4), (-2, CMTime.zero), CMTimeRoundingMethod.roundTowardPositiveInfinity),
+//		(CMTime(value: 5, timescale: 8), CMTime(value: 1, timescale: 4), ( 2, CMTime.zero), CMTimeRoundingMethod.roundTowardZero),
+//		(CMTime(value:-5, timescale: 8), CMTime(value: 1, timescale: 4), (-2, CMTime.zero), CMTimeRoundingMethod.roundTowardZero),
+//		(CMTime(value: 5, timescale: 8), CMTime(value: 1, timescale: 4), ( 3, CMTime.zero), CMTimeRoundingMethod.roundAwayFromZero),
+//		(CMTime(value:-5, timescale: 8), CMTime(value: 1, timescale: 4), (-3, CMTime.zero), CMTimeRoundingMethod.roundAwayFromZero)
+	])
+	func times(target: CMTime, source: CMTime, expect: (Int, CMTime), method: CMTimeRoundingMethod) {
+		#expect(target.times(of: source, method: method) == expect)
+	}
+	@Test(arguments: [
 		(.random(in: -9...9), .random(in: 1...9)),
 		(.random(in: -9...9), .random(in: 1...9)),
 		(.random(in: -9...9), .random(in: 1...9)),
