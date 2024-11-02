@@ -65,7 +65,7 @@ extension CMTime {
 extension CMTime {
 	@inlinable
 	@inline(__always)
-	public func times(of amount: CMTime, method: CMTimeRoundingMethod = .default) -> (count: Int, remainder: CMTime) {
+	public func times(of amount: CMTime, rounding method: Optional<RoundingToward> = .none) -> (count: Int, remainder: CMTime) {
 		if amount.isIndefinite {
 			return (0, self)
 		} else if isNumeric, amount.isNumeric {
@@ -74,25 +74,19 @@ extension CMTime {
 			let d = Int128(timescale) * Int128(amount.value)
 			let (q, r) = n.quotientAndRemainder(dividingBy: d)
 			switch method {
-			case.roundHalfAwayFromZero:
-				assertionFailure("approximation, use roundAwayFromZero")
-				fallthrough
-			case.roundAwayFromZero:
-				return (Int(r.signum() + q), .zero)
-			case.roundTowardNegativeInfinity:
-				return (Int(r.signum() < 0 ? q - 1 : q), .zero)
-			case.roundTowardPositiveInfinity:
-				return (Int(r.signum() > 0 ? q + 1 : q), .zero)
-			case.roundTowardZero:
-				return (Int(q), .zero)
-			case.quickTime:
-				assertionFailure("undefined, use another method")
-				fallthrough
-			case.default:
-				fallthrough
-			default:
+			case.none:
 				let g = gcd(r, d)
 				return (Int(q), .init(value: .init(r/g), timescale: .init(d/g)))
+			case.some(.infinite):
+				return (Int(r.signum() + q), .zero)
+			case.some(.negative):
+				return (Int(r.signum() < 0 ? q - 1 : q), .zero)
+			case.some(.positive):
+				return (Int(r.signum() > 0 ? q + 1 : q), .zero)
+			case.some(.nearest):
+				return (Int(d.magnitude < r.magnitude * 2 ? r.signum() + q : q), .zero)
+			case.some(.zero):
+				return (Int(q), .zero)
 			}
 		} else {
 			return (0, .invalid)
